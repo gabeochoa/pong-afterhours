@@ -110,6 +110,10 @@ struct Transform : BaseComponent {
   }
 };
 
+struct HasVelocity : BaseComponent {
+  vec2 vel;
+};
+
 struct HasColor : BaseComponent {
   raylib::Color color;
   HasColor(raylib::Color c) : color(c) {}
@@ -120,10 +124,84 @@ struct PlayerID : BaseComponent {
   PlayerID(input::GamepadID i) : id(i) {}
 };
 
-struct Move : System<Transform, PlayerID> {
+struct ImpulseBall : System<HasVelocity> {
 
+  virtual void for_each_with(Entity &entity, HasVelocity &vel, float) override {
+    if (entity.has<PlayerID>())
+      return;
+
+    input::PossibleInputCollector<InputAction> inpc =
+        input::get_input_collector<InputAction>();
+    if (!inpc.has_value()) {
+      return;
+    }
+    bool space = false;
+
+    for (auto &actions_done : inpc.inputs()) {
+      switch (actions_done.action) {
+      case InputAction::Launch:
+        space = true;
+        break;
+      default:
+        break;
+      }
+    }
+
+    if (space && vel.vel.x == 0.f && vel.vel.y == 0.f) {
+      vel.vel.x = -0.5f;
+      vel.vel.y = -0.5f * 2;
+    }
+  }
+};
+
+struct MoveAndBounce : System<Transform, HasVelocity> {
+  float map_width;
+  float map_height;
+
+  void once(float) {
+    auto &rez_manager =
+        EntityQuery()
+            .whereHasComponent<window_manager::ProvidesCurrentResolution>()
+            .gen_first_enforce();
+
+    window_manager::ProvidesCurrentResolution &pCurrentResolution =
+        rez_manager.get<window_manager::ProvidesCurrentResolution>();
+
+    map_width = (float)pCurrentResolution.width();
+    map_height = (float)pCurrentResolution.height();
+
+    // TODO get score singleton
+  }
   virtual void for_each_with(Entity &entity, Transform &transform,
-                             PlayerID &playerID, float dt) override {
+                             HasVelocity &vel, float dt) override {
+    float sz = 500;
+    vec2 p = transform.pos();
+    p += vel.vel * sz * dt;
+
+    if (p.y < 0 || p.y + transform.size.y > map_height) {
+      // players dont bounce
+      if (entity.has<PlayerID>())
+        return;
+
+      vel.vel.y *= -1;
+      p += vel.vel * sz * dt;
+      p += vel.vel * sz * dt;
+    }
+
+    if (p.x < -10 || p.x > map_width + 10) {
+      p = vec2{map_width / 2.f, map_height / 2.f};
+      vel.vel = {0, 0};
+      // TODO add to score
+    }
+
+    transform.update(p);
+  }
+};
+
+struct ImpulsePaddle : System<HasVelocity, PlayerID> {
+
+  virtual void for_each_with(Entity &, HasVelocity &vel, PlayerID &playerID,
+                             float) override {
 
     input::PossibleInputCollector<InputAction> inpc =
         input::get_input_collector<InputAction>();
@@ -135,7 +213,6 @@ struct Move : System<Transform, PlayerID> {
     bool down = false;
 
     for (auto &actions_done : inpc.inputs()) {
-      // std::cout << actions_done.id << std::endl;
       if (actions_done.id != playerID.id)
         continue;
       switch (actions_done.action) {
@@ -145,21 +222,83 @@ struct Move : System<Transform, PlayerID> {
       case InputAction::PaddleDown:
         down = true;
         break;
-      // case InputAction::Launch:
-      // space = true;
-      // break;
       default:
         break;
       }
     }
 
-    float sz = 100;
-    vec2 p = transform.pos();
-    if (up)
-      p -= vec2{0, sz * dt};
-    if (down)
-      p += vec2{0, sz * dt};
-    transform.update(p);
+    if (up) {
+      vel.vel.y = -1.f;
+    } else if (down) {
+      vel.vel.y = 1.f;
+    } else {
+      vel.vel.y = 0.f;
+    }
+  }
+};
+
+using raylib::Rectangle;
+struct EQ : public EntityQuery<EQ> {
+  struct WhereInRange : EntityQuery::Modification {
+    vec2 position;
+    float range;
+
+    // TODO mess around with the right epsilon here
+    explicit WhereInRange(vec2 pos, float r = 0.01f)
+        : position(pos), range(r) {}
+    bool operator()(const Entity &entity) const override {
+      vec2 pos = entity.get<Transform>().pos();
+      return distance_sq(position, pos) < (range * range);
+    }
+  };
+
+  EQ &whereInRange(const vec2 &position, float range) {
+    return add_mod(new WhereInRange(position, range));
+  }
+
+  EQ &orderByDist(const vec2 &position) {
+    return orderByLambda([position](const Entity &a, const Entity &b) {
+      float a_dist = distance_sq(a.get<Transform>().pos(), position);
+      float b_dist = distance_sq(b.get<Transform>().pos(), position);
+      return a_dist < b_dist;
+    });
+  }
+
+  struct WhereOverlaps : EntityQuery::Modification {
+    Rectangle rect;
+
+    explicit WhereOverlaps(Rectangle rect_) : rect(rect_) {}
+
+    bool operator()(const Entity &entity) const override {
+      const auto r1 = rect;
+      const auto r2 = entity.get<Transform>().rect();
+      // Check if the rectangles overlap on the x-axis
+      const bool xOverlap = r1.x < r2.x + r2.width && r2.x < r1.x + r1.width;
+
+      // Check if the rectangles overlap on the y-axis
+      const bool yOverlap = r1.y < r2.y + r2.height && r2.y < r1.y + r1.height;
+
+      // Return true if both x and y overlap
+      return xOverlap && yOverlap;
+    }
+  };
+
+  EQ &whereOverlaps(const Rectangle r) { return add_mod(new WhereOverlaps(r)); }
+};
+
+struct Collide : System<Transform, HasVelocity> {
+  virtual void for_each_with(Entity &entity, Transform &transform,
+                             HasVelocity &hasVel, float) override {
+    // only worry about those that can flip
+
+    auto colliders = EQ().whereNotID(entity.id)
+                         .whereHasComponent<Transform>()
+                         .whereOverlaps(transform.rect())
+                         .gen();
+    if (colliders.size() == 0)
+      return;
+
+    hasVel.vel = hasVel.vel * -1.f;
   }
 };
 
@@ -177,13 +316,23 @@ void make_paddle(input::GamepadID id) {
   vec2 position = {.x = id == 0 ? 150.f : 1100.f, .y = 720.f / 2.f};
 
   entity.addComponent<PlayerID>(id);
-  entity.addComponent<Transform>(position, vec2{50.f, 250.f});
+  entity.addComponent<Transform>(position, vec2{30.f, 150.f});
+  entity.addComponent<HasVelocity>();
+}
+
+void make_ball() {
+  auto &entity = EntityHelper::createEntity();
+
+  vec2 position = {.x = 1280.f / 2.f, .y = 720.f / 2.f};
+
+  entity.addComponent<Transform>(position, vec2{30.f, 30.f});
+  entity.addComponent<HasVelocity>();
 }
 
 static void load_gamepad_mappings() {
   std::ifstream ifs("gamecontrollerdb.txt");
   if (!ifs.is_open()) {
-    std::cout << "DJSLKD" << std::endl;
+    std::cout << "Failed to load game controller db" << std::endl;
     return;
   }
   std::stringstream buffer;
@@ -209,6 +358,7 @@ int main(void) {
 
   make_paddle(0);
   make_paddle(1);
+  make_ball();
 
   SystemManager systems;
 
@@ -224,63 +374,22 @@ int main(void) {
     window_manager::register_update_systems(systems);
   }
 
-  systems.register_update_system(std::make_unique<Move>());
+  systems.register_update_system(std::make_unique<ImpulseBall>());
+  systems.register_update_system(std::make_unique<ImpulsePaddle>());
+  systems.register_update_system(std::make_unique<MoveAndBounce>());
+  systems.register_update_system(std::make_unique<Collide>());
 
   // renders
   {
     systems.register_render_system(
         [&]() { raylib::ClearBackground(raylib::DARKGRAY); });
     systems.register_render_system(std::make_unique<RenderFPS>());
-    systems.register_render_system(
-        std::make_unique<input::RenderConnectedGamepads>());
+    // systems.register_render_system(
+    // std::make_unique<input::RenderConnectedGamepads>());
     systems.register_render_system(std::make_unique<RenderEntities>());
   }
 
   while (!raylib::WindowShouldClose()) {
-    int x = 10;
-    {
-      int gamepad = 0;
-      raylib::DrawText(raylib::TextFormat("GP%d: %s", gamepad,
-                                          raylib::GetGamepadName(gamepad)),
-                       10, (x++) * 40, 10, raylib::BLACK);
-      raylib::DrawText(
-          raylib::TextFormat("GP%d: %f", gamepad,
-                             input::get_gamepad_axis_mvt(
-                                 gamepad, raylib::GAMEPAD_AXIS_LEFT_Y)),
-          10, (x++) * 40, 10, raylib::BLACK);
-      raylib::DrawText(
-          raylib::TextFormat("GP%d: %f", gamepad,
-                             input::get_gamepad_axis_mvt(
-                                 gamepad, raylib::GAMEPAD_AXIS_LEFT_X)),
-          10, (x++) * 40, 10, raylib::BLACK);
-    }
-    {
-      int gamepad = 1;
-      raylib::DrawText(raylib::TextFormat("GP%d: %s", gamepad,
-                                          raylib::GetGamepadName(gamepad)),
-                       10, (x++) * 40, 10, raylib::BLACK);
-      raylib::DrawText(
-          raylib::TextFormat("GP%d: %f", gamepad,
-                             input::get_gamepad_axis_mvt(
-                                 gamepad, raylib::GAMEPAD_AXIS_LEFT_Y)),
-          10, (x++) * 40, 10, raylib::BLACK);
-      raylib::DrawText(
-          raylib::TextFormat("GP%d: %f", gamepad,
-                             input::get_gamepad_axis_mvt(
-                                 gamepad, raylib::GAMEPAD_AXIS_LEFT_X)),
-          10, (x++) * 40, 10, raylib::BLACK);
-    }
-
-    std::cout << "connected ? " << input::is_gamepad_available(0) << " "
-              << input::is_gamepad_available(1) << " ";
-
-    std::cout << "left face 0 "
-              << raylib::IsGamepadButtonPressed(
-                     0, raylib::GAMEPAD_BUTTON_LEFT_FACE_DOWN);
-    std::cout << " left face 1 "
-              << raylib::IsGamepadButtonPressed(
-                     1, raylib::GAMEPAD_BUTTON_LEFT_FACE_DOWN)
-              << "\n";
     raylib::BeginDrawing();
     { systems.run(raylib::GetFrameTime()); }
     raylib::EndDrawing();
