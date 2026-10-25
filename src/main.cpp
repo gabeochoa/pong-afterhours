@@ -161,7 +161,9 @@ struct PlayerID : BaseComponent {
   PlayerID(input::GamepadID i) : id(i) {}
 };
 
-struct ImpulseBall : System<HasVelocity> {
+struct Ball : BaseComponent {};
+
+struct ImpulseBall : System<HasVelocity, Ball> {
   input::PossibleInputCollector inpc;
 
   void once(const float) override {
@@ -170,11 +172,8 @@ struct ImpulseBall : System<HasVelocity> {
 
   // Any player may serve: there is no serve ownership in pong, so Launch
   // deliberately ignores the action's player id (unlike ImpulsePaddle).
-  virtual void for_each_with(Entity &entity, HasVelocity &vel,
+  virtual void for_each_with(Entity &, HasVelocity &vel, Ball &,
                              const float) override {
-    if (entity.has<PlayerID>())
-      return;
-
     if (!inpc.has_value()) {
       return;
     }
@@ -196,19 +195,22 @@ struct ImpulseBall : System<HasVelocity> {
   }
 };
 
-struct MoveAndBounce : System<Transform, HasVelocity> {
-  virtual void for_each_with(Entity &entity, Transform &transform,
-                             HasVelocity &vel, const float dt) override {
-    float speed = entity.has<PlayerID>() ? PADDLE_SPEED : BALL_SPEED;
+struct MovePaddle : System<Transform, HasVelocity, PlayerID> {
+  virtual void for_each_with(Entity &, Transform &transform, HasVelocity &vel,
+                             PlayerID &, const float dt) override {
     Vector2Type p = transform.pos();
-    p.x += vel.vel.x * speed * dt;
-    p.y += vel.vel.y * speed * dt;
+    p.y = std::clamp(p.y + vel.vel.y * PADDLE_SPEED * dt, 0.f,
+                     (float)GAME_H - transform.size.y);
+    transform.update(p);
+  }
+};
 
-    if (entity.has<PlayerID>()) {
-      p.y = std::clamp(p.y, 0.f, (float)GAME_H - transform.size.y);
-      transform.update(p);
-      return;
-    }
+struct MoveBall : System<Transform, HasVelocity, Ball> {
+  virtual void for_each_with(Entity &, Transform &transform, HasVelocity &vel,
+                             Ball &, const float dt) override {
+    Vector2Type p = transform.pos();
+    p.x += vel.vel.x * BALL_SPEED * dt;
+    p.y += vel.vel.y * BALL_SPEED * dt;
 
     if (p.y < 0 || p.y + transform.size.y > GAME_H) {
       vel.vel.y *= -1;
@@ -285,7 +287,7 @@ struct ImpulsePaddle : System<HasVelocity, PlayerID> {
   }
 };
 
-struct Collide : System<Transform, HasVelocity> {
+struct Collide : System<Transform, HasVelocity, Ball> {
   RefEntities colliders;
 
   void once(const float) override {
@@ -293,10 +295,8 @@ struct Collide : System<Transform, HasVelocity> {
   }
 
   virtual void for_each_with(Entity &entity, Transform &transform,
-                             HasVelocity &hasVel, const float) override {
-    if (entity.has<PlayerID>())
-      return;
-
+                             HasVelocity &hasVel, Ball &,
+                             const float) override {
     const auto swept = rect::bounds(
         transform.rect(), RectangleType{transform.prev.x, transform.prev.y,
                                             transform.size.x, transform.size.y});
@@ -367,6 +367,7 @@ Entity &make_ball() {
   entity.addComponent<Transform>(position, Vector2Type{30.f, 30.f});
   entity.addComponent<HasVelocity>();
   entity.addComponent<HasColor>(kYellow);
+  entity.addComponent<Ball>();
   return entity;
 }
 
@@ -418,7 +419,8 @@ int main(int argc, char *argv[]) {
 
     systems.register_update_system(std::make_unique<ImpulseBall>());
     systems.register_update_system(std::make_unique<ImpulsePaddle>());
-    systems.register_update_system(std::make_unique<MoveAndBounce>());
+    systems.register_update_system(std::make_unique<MovePaddle>());
+    systems.register_update_system(std::make_unique<MoveBall>());
     systems.register_update_system(std::make_unique<Collide>());
 
     systems.register_render_system(

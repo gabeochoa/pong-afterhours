@@ -20,13 +20,8 @@ static GameState *find_state() {
 }
 
 static Entity *find_ball() {
-  for (auto &ref :
-       EntityQuery().whereHasComponent<Transform>().gen()) {
-    Entity &e = ref.get();
-    if (e.has<HasVelocity>() && !e.has<PlayerID>())
-      return &e;
-  }
-  return nullptr;
+  auto ball = EntityQuery().whereHasComponent<Ball>().gen_first();
+  return ball.valid() ? &ball.asE() : nullptr;
 }
 
 static Entity *find_paddle(int id) {
