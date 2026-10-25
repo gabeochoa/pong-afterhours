@@ -473,6 +473,9 @@ int main(void) {
     systems.register_render_system(std::make_unique<RenderEntities>());
   }
 
+  raylib::RenderTexture2D target =
+      raylib::LoadRenderTexture(GAME_W, GAME_H);
+
   while (!raylib::WindowShouldClose()) {
     if (raylib::IsKeyPressed(raylib::KEY_R) && state.game_over) {
       state.left = state.right = 0;
@@ -483,11 +486,27 @@ int main(void) {
     }
     float dt = std::min(raylib::GetFrameTime(), 1.f / 30.f);
     systems.tick_all(dt);
-    raylib::BeginDrawing();
+    raylib::BeginTextureMode(target);
     systems.render_all(dt);
+    raylib::EndTextureMode();
+    raylib::BeginDrawing();
+    raylib::ClearBackground(raylib::BLACK);
+    float scale =
+        std::min((float)raylib::GetScreenWidth() / (float)GAME_W,
+                 (float)raylib::GetScreenHeight() / (float)GAME_H);
+    float dw = (float)GAME_W * scale;
+    float dh = (float)GAME_H * scale;
+    raylib::DrawTexturePro(
+        target.texture,
+        raylib::Rectangle{0.f, 0.f, (float)GAME_W, -(float)GAME_H},
+        raylib::Rectangle{((float)raylib::GetScreenWidth() - dw) / 2.f,
+                          ((float)raylib::GetScreenHeight() - dh) / 2.f, dw,
+                          dh},
+        vec2{0, 0}, 0.f, raylib::WHITE);
     raylib::EndDrawing();
   }
 
+  raylib::UnloadRenderTexture(target);
   raylib::CloseWindow();
 
   return 0;

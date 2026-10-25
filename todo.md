@@ -94,7 +94,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **`RenderEntities` ignores `HasColor`.** (`src/main.cpp:309`) — `System<Transform>` draws every rectangle `RAYWHITE`; `HasColor` (line 117) is never added to any entity or read. Fix: include `HasColor` in the render system (per-entity colour), or delete it.
 
-- [ ] **No letterboxing/scaling for non-1280x720 windows.** (`src/main.cpp:392`) — the game draws raw-pixel coordinates directly to the backbuffer, with no `RenderTexture`/viewport; on other sizes the playfield stretches/misplaces. Fix: render to a 1280x720 texture and letterboxed-blit it to the window.
+- [x] **No letterboxing/scaling for non-1280x720 windows.** (`src/main.cpp:392`) — the game draws raw-pixel coordinates directly to the backbuffer, with no `RenderTexture`/viewport; on other sizes the playfield stretches/misplaces. Fix: render to a 1280x720 texture and letterboxed-blit it to the window.
 
 - [ ] **`Collide` is O(n^2) per frame.** (`src/main.cpp:294`) — a full `EQ().gen()` scan runs inside `for_each_with` for every `Transform + HasVelocity` entity. Fix: collect colliders once in `once()` (or once per tick) and reuse them.
 
