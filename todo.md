@@ -130,7 +130,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **HUD draw order lets entities overdraw FPS text.** (`src/main.cpp:386`) — `RenderFPS` is registered before `RenderEntities`, so the ball/paddles can overdraw the FPS readout. Fix: register `RenderFPS` last.
 
-- [ ] **Wrong window title.** (`src/main.cpp:347`) — `InitWindow` title is `'wm-afterhours'`, a window-manager leftover for a pong game. Fix: rename to `'pong-afterhours'`.
+- [x] **Wrong window title.** (`src/main.cpp:347`) — `InitWindow` title is `'wm-afterhours'`, a window-manager leftover for a pong game. Fix: rename to `'pong-afterhours'`.
 
 - [ ] **ESC quits instantly.** (`src/main.cpp:392`) — no `SetExitKey`; raylib's default ESC sets `WindowShouldClose`, with no pause/confirm. Fix: `SetExitKey(KEY_NULL)` and handle ESC as pause.
 

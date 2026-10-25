@@ -402,7 +402,7 @@ int main(void) {
   raylib::SetConfigFlags(raylib::FLAG_WINDOW_RESIZABLE |
                           raylib::FLAG_VSYNC_HINT |
                           raylib::FLAG_WINDOW_HIGHDPI);
-  raylib::InitWindow(GAME_W, GAME_H, "wm-afterhours");
+  raylib::InitWindow(GAME_W, GAME_H, "pong-afterhours");
   if (!raylib::IsWindowReady()) {
     std::cerr << "error: failed to create window\n";
     return 1;
