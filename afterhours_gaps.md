@@ -26,15 +26,12 @@ leave the example with nothing to teach.
 - **`PendingE2ECommand::expect(ok, mismatch)`**: consumes, or retries with the mismatch.
 - **`rect::bounds(a, b)`**: rect union, used for pong's swept collision rect.
 - **FPS assert**: `perf_commands` `expect_fps_above` already existed.
+- **Headless runs**: `run()` creates the headless GL context, headless
+  timing reads a steady clock, and `E2EApp` seeds `RandomEngine` per script.
+  `--headless` e2e passes.
 - **Rect overlap / centre**: `rect::overlaps` / `rect::center` already existed.
 
 ## Open
-
-### Headless raylib runs
-
-`RunConfig::display = Headless` skips the window, but with no GL context
-raylib then segfaults in `load_font_from_file`. Pong ignores `--headless`
-until the backend gets a context (or skips GPU loads) in headless mode.
 
 ### Input mapping DSL
 
