@@ -1,6 +1,5 @@
-# Several seconds of play hold a playable frame rate. The second serve
-# covers a rally that scores: a stopped ball serves again, a moving ball
-# ignores the extra serve.
+# Several seconds of play hold a playable frame rate. The floor is 50, not
+# 60: vsync caps fps at the display refresh, often 60.
 key R
 wait_frames 2
 center_paddles
@@ -9,5 +8,5 @@ wait_frames 600
 key SPACE
 wait_frames 30
 assert_ball_moving
-expect_fps_above 60
+expect_fps_above 50
 screenshot 07_performance
