@@ -250,6 +250,7 @@ struct ImpulsePaddle : System<HasVelocity, PlayerID> {
     input::PossibleInputCollector<InputAction> inpc =
         input::get_input_collector<InputAction>();
     if (!inpc.has_value()) {
+      vel.vel.y = 0.f;
       return;
     }
 

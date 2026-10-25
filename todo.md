@@ -78,7 +78,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **Missing gamepad DB fails silently.** (`src/main.cpp:334`) — `!is_open()` only prints to `cout` and returns; `main` (line 350) ignores the failure, so the game continues with default mappings and no visible warning. Fix: propagate the error (stderr + nonzero exit, or an on-screen warning).
 
-- [ ] **Paddle keeps stale velocity if the input collector is missing.** (`src/main.cpp:208`) — `!has_value()` returns before the `else` branch that zeroes `vel.y`, so a missing collector leaves the previous frame's velocity in place. Fix: zero velocity before the early return.
+- [x] **Paddle keeps stale velocity if the input collector is missing.** (`src/main.cpp:208`) — `!has_value()` returns before the `else` branch that zeroes `vel.y`, so a missing collector leaves the previous frame's velocity in place. Fix: zero velocity before the early return.
 
 - [ ] **Simultaneous up+down picks up instead of cancelling.** (`src/main.cpp:230`) — `if (up) ... else if (down)` makes up win when both are held (with merged keyboard+gamepad inputs). Fix: set velocity to 0 when both up and down are pressed.
 
