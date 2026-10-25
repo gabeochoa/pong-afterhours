@@ -120,7 +120,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **`InitWindow` failure unchecked.** (`src/main.cpp:347`) — no check that window/context creation succeeded before systems and the loop run. Fix: check `IsWindowReady()` (or equivalent) and abort with an error.
 
-- [ ] **`MoveAndBounce::once` missing `override`.** (`src/main.cpp:161`) — `void once(float)` has no `override` (sibling systems use it); clang `-Winconsistent-missing-override` warns. Fix: add `override`.
+- [x] **`MoveAndBounce::once` missing `override`.** (`src/main.cpp:161`) — `void once(float)` has no `override` (sibling systems use it); clang `-Winconsistent-missing-override` warns. Fix: add `override`.
 
 ## Low
 
