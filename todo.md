@@ -32,7 +32,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **`fetch_max_gampad_id` returns -1 when all gamepads present.** (`vendor/afterhours/src/plugins/input_system.h:218`) — `result = -1` is set only on the first unavailable id (`break`); if all 8 ids are available the loop ends with `result` still -1, and a gapped layout (pad 0 missing, pad 1 present) also truncates to -1. Fix: scan all ids, track the highest available id, and handle the all-present case (result = `MAX_GAMEPAD_ID - 1`).
 
-- [ ] **Ball launch uses held input, not edge-triggered input.** (`src/main.cpp:150`) — `ImpulseBall` reads `inpc.inputs()` (key/button down), so holding SPACE through a reset while `vel == 0` auto-relaunches the ball. Fix: use `inputs_pressed()` for the one-shot `Launch` action.
+- [x] **Ball launch uses held input, not edge-triggered input.** (`src/main.cpp:150`) — `ImpulseBall` reads `inpc.inputs()` (key/button down), so holding SPACE through a reset while `vel == 0` auto-relaunches the ball. Fix: use `inputs_pressed()` for the one-shot `Launch` action.
 
 - [ ] **Gamepad DB path is CWD-relative.** (`src/main.cpp:333`) — `std::ifstream ifs("gamecontrollerdb.txt")` resolves against the working directory; the makefile never copies/installs the DB, so launching from another directory silently skips mappings (file exists at repo root). Fix: resolve the DB path relative to the executable/bundle, or install it alongside the binary.
 

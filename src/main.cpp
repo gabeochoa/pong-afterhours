@@ -319,6 +319,9 @@ struct EQ : public EntityQuery<EQ> {
 struct Collide : System<Transform, HasVelocity> {
   virtual void for_each_with(Entity &entity, Transform &transform,
                              HasVelocity &hasVel, float) override {
+    if (entity.has<PlayerID>())
+      return;
+
     // only worry about those that can flip
 
     auto colliders = EQ().whereNotID(entity.id)
