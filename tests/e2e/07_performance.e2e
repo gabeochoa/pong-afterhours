@@ -1,0 +1,13 @@
+# Several seconds of play hold a playable frame rate. The second serve
+# covers a rally that scores: a stopped ball serves again, a moving ball
+# ignores the extra serve.
+key R
+wait_frames 2
+center_paddles
+key SPACE
+wait_frames 600
+key SPACE
+wait_frames 30
+assert_ball_moving
+assert_fps_gt 60
+screenshot 07_performance

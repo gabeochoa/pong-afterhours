@@ -21,6 +21,7 @@ a.out
 release*
 recording.trace/
 output/
+tests/e2e/screenshots/*.png
 # until they are used in the project, hiding the kennynl folder
 art_storage/*
 *.exe

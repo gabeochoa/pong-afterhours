@@ -1,0 +1,16 @@
+# Menu + pause: the game starts paused; P and Esc both toggle pause.
+assert_paused 1
+screenshot 01_menu
+key P
+wait_frames 2
+assert_paused 0
+key P
+wait_frames 2
+assert_paused 1
+key ESCAPE
+wait_frames 2
+assert_paused 0
+key ESCAPE
+wait_frames 2
+assert_paused 1
+screenshot 01_paused

@@ -1,0 +1,8 @@
+# Ball bounces off P1's paddle: horizontal velocity flips.
+key R
+wait_frames 2
+center_paddles
+teleport_ball 260 360 -1 0
+wait_frames 60
+assert_ball_vel_x gt 0
+screenshot 05_paddle_hit

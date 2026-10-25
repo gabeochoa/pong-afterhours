@@ -1,0 +1,10 @@
+# Ball bounces off the top and bottom walls: vertical velocity flips.
+key R
+wait_frames 2
+teleport_ball 640 20 0 -1
+wait_frames 20
+assert_ball_vel_y gt 0
+teleport_ball 640 690 0 1
+wait_frames 20
+assert_ball_vel_y lt 0
+screenshot 04_wall_bounce

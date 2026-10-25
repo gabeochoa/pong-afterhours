@@ -34,7 +34,9 @@ INCLUDES = -Ivendor/ -Isrc/
 LIBS = -L. -Lvendor/ $(RAYLIB_LIB)
 
 SRC_FILES := $(wildcard src/*.cpp src/**/*.cpp)
-H_FILES := $(wildcard src/**/*.h src/**/*.hpp)
+# Top-level src/*.h too: src/**/*.h alone only matches subdirectories, so
+# editing a header next to main.cpp would silently skip the rebuild.
+H_FILES := $(wildcard src/*.h src/**/*.h src/*.hpp src/**/*.hpp)
 OBJ_DIR := ./output
 OBJ_FILES := $(SRC_FILES:%.cpp=$(OBJ_DIR)/%.o)
 
@@ -48,12 +50,18 @@ OUTPUT_EXE := pong.exe
 # (g++-14 is also not installed on this machine.)
 CXX ?= clang++
 
-.PHONY: all build run test clean
+.PHONY: all build run test e2e clean
 
 all: build
 
 test: build
 	test -x $(OUTPUT_EXE)
+
+# Runs the afterhours e2e scripts in tests/e2e. Screenshots land in
+# tests/e2e/screenshots (gitignored run artifacts).
+e2e: build
+	./$(OUTPUT_EXE) --e2e --test-script-dir tests/e2e \
+		--screenshot-dir tests/e2e/screenshots
 
 build: $(OUTPUT_EXE)
 

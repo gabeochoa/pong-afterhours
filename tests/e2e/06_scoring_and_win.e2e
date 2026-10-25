@@ -1,0 +1,28 @@
+# Scoring: ball past the left edge awards P2; first to 5 wins; R restarts.
+key R
+wait_frames 2
+assert_score 0 0
+teleport_ball 10 360 -1 0
+wait_frames 20
+assert_score 0 1
+teleport_ball 10 360 -1 0
+wait_frames 20
+assert_score 0 2
+teleport_ball 10 360 -1 0
+wait_frames 20
+assert_score 0 3
+teleport_ball 10 360 -1 0
+wait_frames 20
+assert_score 0 4
+teleport_ball 10 360 -1 0
+wait_frames 20
+assert_score 0 5
+assert_game_over 1
+screenshot 06_win
+key R
+wait_frames 2
+assert_score 0 0
+assert_game_over 0
+assert_paused 0
+assert_ball_stopped
+screenshot 06_restart

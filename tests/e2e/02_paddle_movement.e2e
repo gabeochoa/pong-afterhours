@@ -1,0 +1,21 @@
+# Both paddles move up/down with keyboard: P1 arrows, P2 W/S.
+key R
+wait_frames 2
+center_paddles
+hold_key UP
+wait_frames 60
+release_key UP
+assert_paddle_y 0 lt 360
+hold_key DOWN
+wait_frames 120
+release_key DOWN
+assert_paddle_y 0 gt 360
+hold_key W
+wait_frames 60
+release_key W
+assert_paddle_y 1 lt 360
+hold_key S
+wait_frames 120
+release_key S
+assert_paddle_y 1 gt 360
+screenshot 02_paddles

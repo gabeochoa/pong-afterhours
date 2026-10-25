@@ -6,6 +6,10 @@ backward::SignalHandling sh;
 #include "std_include.h"
 
 #define AFTER_HOURS_USE_RAYLIB
+// Routes the input plugin's key/button polling through the e2e injector
+// (without it, the collector only sees the real keyboard and injected input
+// never reaches gameplay).
+#define AFTER_HOURS_ENABLE_E2E_TESTING
 #include "afterhours/ah.h"
 #include "afterhours/src/drawing_helpers.h"
 #include "afterhours/src/font_helper.h"
@@ -408,7 +412,11 @@ Entity &make_ball() {
   return entity;
 }
 
-int main(void) {
+// E2E test wiring (afterhours testing framework). Included here because the
+// pong commands inspect the game types above.
+#include "e2e_integration.h"
+
+int main(int argc, char *argv[]) {
   graphics::set_config_flags(graphics::FLAG_WINDOW_RESIZABLE |
                              graphics::FLAG_VSYNC_HINT |
                              raylib::FLAG_WINDOW_HIGHDPI);
@@ -444,6 +452,13 @@ int main(void) {
   // the game starts paused (no tick yet) while render already needs them.
   EntityHelper::merge_entity_arrays();
 
+  // E2E handlers tick in their own manager, every frame even while paused
+  // (see e2e_integration.h).
+  SystemManager e2e_systems;
+  auto e2e = pong_e2e::setup(e2e_systems, argc, argv);
+  if (pong_e2e::requested(argc, argv) && !e2e)
+    return 1;
+
   SystemManager systems;
 
   // debug systems
@@ -476,9 +491,16 @@ int main(void) {
   }
 
   graphics::RenderTextureType target = load_render_texture(GAME_W, GAME_H);
+  if (e2e)
+    e2e->target = &target;
 
   while (!graphics::window_should_close()) {
-    if (graphics::is_key_pressed(raylib::KEY_R)) {
+    float dt = std::min(graphics::get_frame_time(), 1.f / 30.f);
+    if (e2e)
+      pong_e2e::tick(*e2e, dt);
+    // platform_input routes to the injected test input under --e2e and to
+    // the real keyboard otherwise, so the same keys drive both.
+    if (testing::platform_input::is_key_pressed(raylib::KEY_R)) {
       state.left = state.right = 0;
       state.game_over = false;
       state.paused = false;
@@ -486,11 +508,10 @@ int main(void) {
           vec2{(float)GAME_W / 2.f, (float)GAME_H / 2.f});
       ball.get<HasVelocity>().vel = {0, 0};
     }
-    if ((graphics::is_key_pressed(raylib::KEY_P) ||
-         graphics::is_key_pressed(raylib::KEY_ESCAPE)) &&
+    if ((testing::platform_input::is_key_pressed(raylib::KEY_P) ||
+         testing::platform_input::is_key_pressed(raylib::KEY_ESCAPE)) &&
         !state.game_over)
       state.paused = !state.paused;
-    float dt = std::min(graphics::get_frame_time(), 1.f / 30.f);
     if (!state.paused && !state.game_over)
       systems.tick_all(EntityHelper::get_entities_for_mod(), dt);
     begin_texture_mode(target);
@@ -519,7 +540,16 @@ int main(void) {
                           dw, dh},
         vec2{0, 0}, 0.f, raylib::WHITE);
     graphics::end_drawing();
+    if (e2e) {
+      pong_e2e::post_render(*e2e);
+      if (pong_e2e::is_finished(*e2e))
+        break;
+    }
   }
+
+  int exit_code = 0;
+  if (e2e)
+    exit_code = pong_e2e::finish(*e2e);
 
   unload_render_texture(target);
   if (sound_ready) {
@@ -528,5 +558,5 @@ int main(void) {
   }
   afterhours::CloseAudioDevice();
   graphics::close_window();
-  return 0;
+  return exit_code;
 }

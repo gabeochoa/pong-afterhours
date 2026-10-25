@@ -1,0 +1,14 @@
+# Launch: SPACE serves the ball, which stays in play. The second serve
+# covers a rally that scores: a stopped ball serves again, a moving ball
+# ignores the extra serve.
+key R
+wait_frames 2
+center_paddles
+key SPACE
+wait_frames 30
+assert_ball_moving
+wait_frames 200
+key SPACE
+wait_frames 30
+assert_ball_moving
+screenshot 03_rally
