@@ -302,37 +302,41 @@ struct input : developer::Plugin {
       collector.inputs.clear();
       collector.inputs_pressed.clear();
 
+      auto emit = [&](bool pressed, GamepadID id,
+                    const ValidInputs &subset, Action action) {
+        auto [medium, amount] = pressed
+                                    ? check_single_action_pressed(id, subset)
+                                    : check_single_action_down(id, subset);
+        if (amount <= 0.f)
+          return;
+        (pressed ? collector.inputs_pressed : collector.inputs)
+            .push_back(ActionDone{.medium = medium,
+                                  .id = id,
+                                  .action = action,
+                                  .amount_pressed = 1.f,
+                                  .length_pressed = dt});
+      };
+
       for (auto &kv : input_mapper.mapping) {
         Action action = kv.first;
         ValidInputs vis = kv.second;
 
-        int i = 0;
-        do {
-          // down
-          {
-            auto [medium, amount] = check_single_action_down(i, vis);
-            if (amount > 0.f) {
-              collector.inputs.push_back(ActionDone{.medium = medium,
-                                                    .id = i,
-                                                    .action = action,
-                                                    .amount_pressed = 1.f,
-                                                    .length_pressed = dt});
-            }
-          }
-          // pressed
-          {
-            auto [medium, amount] = check_single_action_pressed(i, vis);
-            if (amount > 0.f) {
-              collector.inputs_pressed.push_back(
-                  ActionDone{.medium = medium,
-                             .id = i,
-                             .action = action,
-                             .amount_pressed = 1.f,
-                             .length_pressed = dt});
-            }
-          }
-          i++;
-        } while (i <= mxGamepadID.max_gamepad_id_available);
+        ValidInputs keyboard;
+        ValidInputs gamepad;
+        for (auto &in : vis) {
+          if (std::holds_alternative<KeyCode>(in))
+            keyboard.push_back(in);
+          else
+            gamepad.push_back(in);
+        }
+
+        // Keyboard is shared, not per-gamepad: poll once, tagged id -1.
+        emit(false, -1, keyboard, action);
+        emit(true, -1, keyboard, action);
+        for (int i = 0; i <= mxGamepadID.max_gamepad_id_available; i++) {
+          emit(false, i, gamepad, action);
+          emit(true, i, gamepad, action);
+        }
       }
 
       if (collector.inputs.size() == 0) {

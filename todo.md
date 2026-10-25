@@ -44,7 +44,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **Hardcoded spawn geometry ignores the resolution singleton.** (`src/main.cpp:316`) — `make_paddle` uses x = 150/1100 and y = 720/2, `make_ball` uses 1280/2, 720/2, while bounds come from `ProvidesCurrentResolution`; a different window size misplaces spawns. Fix: derive spawn positions from the resolution singleton / named constants.
 
-- [ ] **Unclamped variable dt enables tunneling.** (`src/main.cpp:394`) — `systems.run(raylib::GetFrameTime())` passes raw frame time; `MoveAndBounce` steps `p += vel * 500 * dt`, so a hitch can teleport the ball through a paddle/wall. Fix: clamp dt (e.g. `<= 1/30` s) or use a fixed timestep.
+- [x] **Unclamped variable dt enables tunneling.** (`src/main.cpp:394`) — `systems.run(raylib::GetFrameTime())` passes raw frame time; `MoveAndBounce` steps `p += vel * 500 * dt`, so a hitch can teleport the ball through a paddle/wall. Fix: clamp dt (e.g. `<= 1/30` s) or use a fixed timestep.
 
 - [ ] **No `clean` recipe despite `.PHONY: clean`.** (`makefile:42`) — `.PHONY` lists `clean` but no `clean:` target exists, so `make clean` is a no-op and `pong.exe`/outputs are never removed. Fix: add a `clean` recipe deleting `$(OUTPUT_EXE)`, `output/`, and `*.dSYM`.
 
