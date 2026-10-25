@@ -45,7 +45,7 @@ OUTPUT_EXE := pong.exe
 
 # NOTE: g++ (Homebrew GCC) cannot parse the macOS 15/26 SDK headers. Use clang++.
 # (g++-14 is also not installed on this machine.)
-CXX := clang++
+CXX ?= clang++
 
 .PHONY: all build run clean
 

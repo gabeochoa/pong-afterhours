@@ -106,7 +106,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **`Limit` off-by-one allows n+1.** (`vendor/afterhours/src/entity_query.h:50`) — `if (amount_taken > amount) return false; amount_taken++;` passes 2 results for `take(1)`. Fix: use `>=`.
 
-- [ ] **`CXX :=` blocks environment override.** (`makefile:40`) — `CXX := clang++` overrides environment `CXX` (only command-line assignment beats it), breaking GCC/Linux setups. Fix: `CXX ?= clang++`.
+- [x] **`CXX :=` blocks environment override.** (`makefile:40`) — `CXX := clang++` overrides environment `CXX` (only command-line assignment beats it), breaking GCC/Linux setups. Fix: `CXX ?= clang++`.
 
 - [ ] **Draft `-std=c++2c`.** (`makefile:18`) — `FLAGS` uses `-std=c++2c`, an experimental pre-C++26 dialect, not a stable portable standard. Fix: use `-std=c++23`.
 
