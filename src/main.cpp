@@ -320,27 +320,20 @@ struct Collide : System<Transform, HasVelocity> {
       if (other_e.id == entity.id)
         continue;
       const Transform &other = other_e.get<Transform>();
-      bool overlap =
-          swept.x < other.pos().x + other.size.x &&
-          other.pos().x < swept.x + swept.width &&
-          swept.y < other.pos().y + other.size.y &&
-          other.pos().y < swept.y + swept.height;
-      if (!overlap)
+      if (!rect::overlaps(swept, other.rect()))
         continue;
 
-      float dx = (transform.pos().x + transform.size.x / 2.f) -
-                 (other.pos().x + other.size.x / 2.f);
+      const auto c = rect::center(transform.rect());
+      const auto oc = rect::center(other.rect());
+      const vec2 d{c.x - oc.x, c.y - oc.y};
       bool approaching =
-          (hasVel.vel.x > 0 && dx < 0) || (hasVel.vel.x < 0 && dx > 0);
+          (hasVel.vel.x > 0 && d.x < 0) || (hasVel.vel.x < 0 && d.x > 0);
       if (!approaching)
         continue;
 
       hasVel.vel.x *= -1.f;
 
-      float offset =
-          ((transform.pos().y + transform.size.y / 2.f) -
-           (other.pos().y + other.size.y / 2.f)) /
-          (other.size.y / 2.f);
+      float offset = d.y / (other.size.y / 2.f);
       float paddle_vy = 0.f;
       if (other_e.has<HasVelocity>())
         paddle_vy = other_e.get<HasVelocity>().vel.y;
