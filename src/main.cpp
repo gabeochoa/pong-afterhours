@@ -416,6 +416,9 @@ static bool load_gamepad_mappings() {
 }
 
 int main(void) {
+  raylib::SetConfigFlags(raylib::FLAG_WINDOW_RESIZABLE |
+                          raylib::FLAG_VSYNC_HINT |
+                          raylib::FLAG_WINDOW_HIGHDPI);
   raylib::InitWindow(GAME_W, GAME_H, "wm-afterhours");
 
   if (!load_gamepad_mappings())
