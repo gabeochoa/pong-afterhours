@@ -328,7 +328,7 @@ struct Collide : System<Transform, HasVelocity> {
     if (colliders.size() == 0)
       return;
 
-    hasVel.vel = hasVel.vel * -1.f;
+    hasVel.vel.x *= -1.f;
   }
 };
 

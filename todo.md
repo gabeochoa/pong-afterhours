@@ -20,7 +20,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **`Collide` lacks an approaching check.** (`src/main.cpp:298`) — flips on any overlap with no check on velocity direction, so it flips the ball even when moving away while still overlapping, sending it back into the paddle. Fix: flip only when the entity is moving toward the collider (velocity along the collision normal).
 
-- [ ] **`Collide` has no separation or cooldown.** (`src/main.cpp:301`) — no push-out, no per-pair cooldown/timestamp; a ball still overlapping next frame flips again, causing jitter/double-hits and FPS-dependent outcomes. Fix: push the ball out along the normal on collision and/or add a short per-pair cooldown.
+- [x] **`Collide` has no separation or cooldown.** (`src/main.cpp:301`) — no push-out, no per-pair cooldown/timestamp; a ball still overlapping next frame flips again, causing jitter/double-hits and FPS-dependent outcomes. Fix: push the ball out along the normal on collision and/or add a short per-pair cooldown.
 
 - [ ] **`Collide` flips paddle velocity too.** (`src/main.cpp:301`) — `for_each_with` runs for every `Transform + HasVelocity` entity, including paddles (which have `HasVelocity`), and flips its own velocity on overlap — a ball–paddle hit reverses the paddle as well as the ball. Fix: only flip the ball (e.g. skip entities with `PlayerID`), and reverse x only.
 
