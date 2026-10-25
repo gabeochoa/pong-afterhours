@@ -1,89 +1,62 @@
 # afterhours gaps
 
 Library gaps found while making pong-afterhours the smallest example of how
-to use afterhours. Pong is a 562-line `main.cpp` plus 426 lines of e2e
-support, of which ~200 lines are actual game logic — the rest is
-scaffolding afterhours could absorb.
+to use afterhours. Pong is now a 509-line `main.cpp` plus 224 lines of e2e
+commands (it was 562 + 426).
 
 Bar for adding any item: would three or more games use it. Do not absorb
 game rules (collision, scoring, win condition, pause semantics, serve
-rules) — those are the game, not scaffolding, and absorbing them would
+rules). Those are the game itself, not scaffolding, and absorbing them would
 leave the example with nothing to teach.
 
-## Gaps
+## Done
 
-### 1. App runner
+- **App runner**: `graphics::RunConfig` + `graphics::run()` already existed
+  (callbacks: `init` / `frame` / `cleanup`). Pong uses it now.
+- **E2E setup helper**: `testing::E2EApp` (`e2e_testing/app.h`). Replaced
+  pong's `e2e_integration.h`.
+- **Text layout**: `draw_text_centered`, `draw_text_right_aligned`,
+  `draw_text_with_shadow`.
+- **Synth beep**: `synth::beep(freq, seconds)`.
+- **Font with fallback**: no library change needed. Load the font, then
+  `if (!font_is_usable(f)) f = get_default_font();`.
+- **Letterbox present**: `draw_render_texture(rt, content_viewport(w, h).dest,
+  tint)`. The library handles the per-backend flip.
+- **`hold_key` / `release_key`**: e2e builtins. The builtin `key` only taps.
+- **`PendingE2ECommand::expect(ok, mismatch)`**: consumes, or retries with the mismatch.
+- **`rect::bounds(a, b)`**: rect union, used for pong's swept collision rect.
+- **FPS assert**: `perf_commands` `expect_fps_above` already existed.
+- **Rect overlap / centre**: `rect::overlaps` / `rect::center` already existed.
 
-One call owning window init, dt clamp, letterbox present, pause gating,
-teardown. Replaces most of pong `main()` (~144 lines -> ~45).
-Open design decision: callbacks/lambdas vs subclass-and-override. That
-choice sets the shape of every future game.
+## Open
 
-### 2. E2E setup helper
+### Headless raylib runs
 
-One call for parse args, handler registration order, runner tick + merge,
-screenshot capture, results/exit code. Replaces pong's
-`src/e2e_integration.h` (~137 -> ~25). Pieces already exist
-(`parse_e2e_args`, `configure_runner`, `register_all_handlers`); the
-per-game wiring does not.
+`RunConfig::display = Headless` skips the window, but with no GL context
+raylib then segfaults in `load_font_from_file`. Pong ignores `--headless`
+until the backend gets a context (or skips GPU loads) in headless mode.
 
-### 3. Text layout: `draw_text_centered`, `draw_text_right_aligned`, `draw_text_with_shadow`
+### Input mapping DSL
 
-Replaces magic offsets in pong `RenderScore` / `RenderFPS` / menu
-(`GAME_W / 2 - 140`, `-190`, ...). Would have fixed pong's FPS-inset and
-menu-shadow screenshot issues with one-line calls.
+Builder/table for action bindings. Low value: pong's `get_mapping()` is
+already a readable plain table.
 
-### 4. Input mapping DSL
+### Standard `Transform` / `HasVelocity`
 
-Builder/table for action bindings. Replaces pong `get_mapping()`
-(~57 -> ~20). Keep the syntax readable; it must stay a plain mapping
-underneath.
+Shared components. Must keep `prev` (swept collision uses it). Wait for a
+second consumer.
 
-### 5. Synth beep: `synth::beep(freq, seconds)` with attack/release envelope
+### Input-collector base
 
-Replaces pong `make_beep` (~28 -> ~4).
+An `InputSystem<...>` base that injects the collector. Saves about 8 lines
+across 2 systems. Revisit when a third game wants it.
 
-### 6. Font with fallback
+### E2E command lambdas: `testing::command("name", handler)`
 
-A font handle that degrades to the default font automatically. Replaces
-pong `draw_game_text` + `font_ready` global (~13 -> ~3).
-
-### 7. Standard `Transform` / `HasVelocity`
-
-Shared components in a common header. Replaces pong's structs
-(~24 -> ~5). Must keep `prev` (pong's swept collision uses it), or pong
-keeps its own `Transform`.
-
-### 8. Letterbox helper — withdrawn, already supported
-
-Not a gap. The library already supports resize / scale / pillarbox /
-letterbox via `window_manager::content_viewport` (dest + scale),
-`window_to_content` / `content_to_window`, and `get_mouse_position`
-already applying the mapping (see afterhours `docs/letterboxing.md`).
-Pong was using the library wrong: it re-derived the present dest math
-instead of calling `content_viewport`. No new helper.
-
-### 9. Input-collector base
-
-An `InputSystem<...>` base that injects the collector. Replaces repeated
-`inpc` + `once()` in pong `ImpulseBall` / `ImpulsePaddle` (~12 -> ~4).
-
-### 10. E2E command lambdas: `testing::command("name", handler)`
-
-Replaces struct-per-command boilerplate in pong `src/e2e_commands.h`
-(~289 -> ~200). Structs may be clearer in an example; weigh readability
-before adding.
-
-## Suggested order
-
-1. Text layout helpers — smallest, zero design risk.
-2. E2E setup helper — biggest per-line win; every game reimplements it.
-3. Input mapping DSL — densest boilerplate left in game code.
-4. App runner — biggest overall win, but needs the callbacks-vs-subclass
-   decision first.
+Structs teach the pattern better in an example. Not planned.
 
 ## Explicitly not gaps
 
-Collision, scoring, win condition, pause semantics, serve rules. If the
-library absorbs them, pong stops being an example of how to use afterhours
-and becomes configuration for pong-in-a-box.
+Collision response, scoring, win condition, pause semantics, serve rules.
+If the library absorbs them, pong stops being an example of how to use
+afterhours and becomes configuration for pong-in-a-box.
