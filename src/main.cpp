@@ -140,10 +140,14 @@ auto get_mapping() {
 struct Transform : BaseComponent {
   vec2 position;
   vec2 size;
+  vec2 prev;
 
   vec2 pos() const { return position; }
-  void update(const vec2 &v) { position = v; }
-  Transform(vec2 pos, vec2 sz) : position(pos), size(sz) {}
+  void update(const vec2 &v) {
+    prev = position;
+    position = v;
+  }
+  Transform(vec2 pos, vec2 sz) : position(pos), size(sz), prev(pos) {}
   raylib::Rectangle rect() const {
     return raylib::Rectangle{position.x, position.y, size.x, size.y};
   }
@@ -330,9 +334,19 @@ struct Collide : System<Transform, HasVelocity> {
 
     // only worry about those that can flip
 
+    raylib::Rectangle swept = transform.rect();
+    swept.x = std::min(transform.pos().x, transform.prev.x);
+    swept.y = std::min(transform.pos().y, transform.prev.y);
+    swept.width = std::max(transform.pos().x + transform.size.x,
+                           transform.prev.x + transform.size.x) -
+                  swept.x;
+    swept.height = std::max(transform.pos().y + transform.size.y,
+                            transform.prev.y + transform.size.y) -
+                   swept.y;
+
     auto colliders = EQ().whereNotID(entity.id)
                          .whereHasComponent<Transform>()
-                         .whereOverlaps(transform.rect())
+                         .whereOverlaps(swept)
                          .gen();
     if (colliders.size() == 0)
       return;

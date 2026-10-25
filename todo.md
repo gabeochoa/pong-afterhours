@@ -74,47 +74,47 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **Paddle wall hit discards the move instead of clamping.** (`src/main.cpp:184`) — if a paddle (`PlayerID`) is out of y-bounds, `for_each_with` returns without updating/clamping, so it stops short of the edge and never recovers if spawned outside. Fix: clamp `p.y` to `[0, height - size.y]` and apply the update.
 
-- [x] **Ball launch ignores player id.** (`src/main.cpp:140`) — `ImpulseBall` never checks `actions_done.id`, so any player's `Launch` fires the ball — unlike `ImpulsePaddle`, which filters by player id. Fix: filter `Launch` to the serving player (or document any-player launch as intended).
+- [ ] **Ball launch ignores player id.** (`src/main.cpp:140`) — `ImpulseBall` never checks `actions_done.id`, so any player's `Launch` fires the ball — unlike `ImpulsePaddle`, which filters by player id. Fix: filter `Launch` to the serving player (or document any-player launch as intended).
 
 - [ ] **Missing gamepad DB fails silently.** (`src/main.cpp:334`) — `!is_open()` only prints to `cout` and returns; `main` (line 350) ignores the failure, so the game continues with default mappings and no visible warning. Fix: propagate the error (stderr + nonzero exit, or an on-screen warning).
 
-- [x] **Paddle keeps stale velocity if the input collector is missing.** (`src/main.cpp:208`) — `!has_value()` returns before the `else` branch that zeroes `vel.y`, so a missing collector leaves the previous frame's velocity in place. Fix: zero velocity before the early return.
+- [ ] **Paddle keeps stale velocity if the input collector is missing.** (`src/main.cpp:208`) — `!has_value()` returns before the `else` branch that zeroes `vel.y`, so a missing collector leaves the previous frame's velocity in place. Fix: zero velocity before the early return.
 
 - [ ] **Simultaneous up+down picks up instead of cancelling.** (`src/main.cpp:230`) — `if (up) ... else if (down)` makes up win when both are held (with merged keyboard+gamepad inputs). Fix: set velocity to 0 when both up and down are pressed.
 
-- [x] **Analog magnitude discarded.** (`vendor/afterhours/src/plugins/input_system.h:315`) — `visit_axis` returns the actual magnitude, but the collector stores `amount_pressed = 1.f`, so analog deflection never scales paddle speed. Fix: store the actual `amount` and scale paddle speed by it.
+- [ ] **Analog magnitude discarded.** (`vendor/afterhours/src/plugins/input_system.h:315`) — `visit_axis` returns the actual magnitude, but the collector stores `amount_pressed = 1.f`, so analog deflection never scales paddle speed. Fix: store the actual `amount` and scale paddle speed by it.
 
 - [ ] **`PossibleInputCollector::inputs()` unchecked.** (`vendor/afterhours/src/plugins/input_system.h:188`) — `inputs()`, `inputs_pressed()`, and `since_last_input()` call `data.value()` directly, throwing `bad_optional_access` if the collector is missing; callers must pre-check `has_value()`. Fix: check inside the accessors (return an empty vector / 0) or document the pre-check contract.
 
-- [x] **Input freshness relies on implicit registration order.** (`src/main.cpp:373`) — input systems are registered before `ImpulseBall`/`ImpulsePaddle` with no guarantee; reordering would make them read stale inputs. Fix: document/enforce the ordering (or make the input tick an explicit first phase).
+- [ ] **Input freshness relies on implicit registration order.** (`src/main.cpp:373`) — input systems are registered before `ImpulseBall`/`ImpulsePaddle` with no guarantee; reordering would make them read stale inputs. Fix: document/enforce the ordering (or make the input tick an explicit first phase).
 
 - [ ] **`ProvidesTargetFPS` is dead.** (`src/main.cpp:348`) — `SetTargetFPS(200)` is hardcoded, the singleton `ProvidesTargetFPS` (added at line 356 with 200) is never read, and no consumer calls `SetTargetFPS` from it. Fix: drive FPS from the singleton, or delete the singleton.
 
-- [x] **No `SetConfigFlags` before `InitWindow`.** (`src/main.cpp:347`) — no `FLAG_WINDOW_RESIZABLE`/`VSYNC`/`HIGHDPI` is set, leaving a fixed window with tearing. Fix: call `SetConfigFlags` before `InitWindow`.
+- [ ] **No `SetConfigFlags` before `InitWindow`.** (`src/main.cpp:347`) — no `FLAG_WINDOW_RESIZABLE`/`VSYNC`/`HIGHDPI` is set, leaving a fixed window with tearing. Fix: call `SetConfigFlags` before `InitWindow`.
 
 - [ ] **`RenderEntities` ignores `HasColor`.** (`src/main.cpp:309`) — `System<Transform>` draws every rectangle `RAYWHITE`; `HasColor` (line 117) is never added to any entity or read. Fix: include `HasColor` in the render system (per-entity colour), or delete it.
 
-- [x] **No letterboxing/scaling for non-1280x720 windows.** (`src/main.cpp:392`) — the game draws raw-pixel coordinates directly to the backbuffer, with no `RenderTexture`/viewport; on other sizes the playfield stretches/misplaces. Fix: render to a 1280x720 texture and letterboxed-blit it to the window.
+- [ ] **No letterboxing/scaling for non-1280x720 windows.** (`src/main.cpp:392`) — the game draws raw-pixel coordinates directly to the backbuffer, with no `RenderTexture`/viewport; on other sizes the playfield stretches/misplaces. Fix: render to a 1280x720 texture and letterboxed-blit it to the window.
 
 - [ ] **`Collide` is O(n^2) per frame.** (`src/main.cpp:294`) — a full `EQ().gen()` scan runs inside `for_each_with` for every `Transform + HasVelocity` entity. Fix: collect colliders once in `once()` (or once per tick) and reuse them.
 
-- [x] **Input collector re-queried per paddle per frame.** (`src/main.cpp:206`) — `get_input_collector()` runs a full `EntityQuery` scan inside each `for_each_with` call. Fix: fetch the collector once per tick and pass/cache it.
+- [ ] **Input collector re-queried per paddle per frame.** (`src/main.cpp:206`) — `get_input_collector()` runs a full `EntityQuery` scan inside each `for_each_with` call. Fix: fetch the collector once per tick and pass/cache it.
 
 - [ ] **`EQ::whereInRange`/`orderByDist` dead and unsafe.** (`src/main.cpp:255`) — never called, and both call `entity.get<Transform>()` with no `has<Transform>` guard (`.at` throws on a missing component). Fix: delete them, or guard with `has<Transform>()`.
 
-- [x] **`HasVelocity.vel` lacks an initializer.** (`src/main.cpp:114`) — `vec2 vel;` has no ctor/init; zeroing relies only on `make_unique` value-init, while direct/stack construction leaves it indeterminate. Fix: `vec2 vel{};`.
+- [ ] **`HasVelocity.vel` lacks an initializer.** (`src/main.cpp:114`) — `vec2 vel;` has no ctor/init; zeroing relies only on `make_unique` value-init, while direct/stack construction leaves it indeterminate. Fix: `vec2 vel{};`.
 
 - [ ] **`Limit` off-by-one allows n+1.** (`vendor/afterhours/src/entity_query.h:50`) — `if (amount_taken > amount) return false; amount_taken++;` passes 2 results for `take(1)`. Fix: use `>=`.
 
-- [x] **`CXX :=` blocks environment override.** (`makefile:40`) — `CXX := clang++` overrides environment `CXX` (only command-line assignment beats it), breaking GCC/Linux setups. Fix: `CXX ?= clang++`.
+- [ ] **`CXX :=` blocks environment override.** (`makefile:40`) — `CXX := clang++` overrides environment `CXX` (only command-line assignment beats it), breaking GCC/Linux setups. Fix: `CXX ?= clang++`.
 
 - [ ] **Draft `-std=c++2c`.** (`makefile:18`) — `FLAGS` uses `-std=c++2c`, an experimental pre-C++26 dialect, not a stable portable standard. Fix: use `-std=c++23`.
 
-- [x] **Empty compilation database.** (`compile_commands.json:1`) — root file is `[]`; the makefile never generates it, so clangd has no translation unit for `src/main.cpp`. Fix: generate it from the build, or stop tracking the empty file.
+- [ ] **Empty compilation database.** (`compile_commands.json:1`) — root file is `[]`; the makefile never generates it, so clangd has no translation unit for `src/main.cpp`. Fix: generate it from the build, or stop tracking the empty file.
 
 - [ ] **Inverted macro guard overwrites the user value.** (`vendor/afterhours/ah.h:14`) — `#if defined(AFTER_HOURS_MAX_COMPONENTS)` then `#define AFTER_HOURS_MAX_COMPONENTS 128` overwrites a user-provided value, and never defines it when unset. Fix: flip to `#ifndef`.
 
-- [x] **Header not self-contained.** (`vendor/afterhours/src/plugins/input_system.h:4`) — includes only `<map>`/`<variant>` yet uses `std::string`, `std::to_string`, and `std::pair`, relying on transitive includes. Fix: add `<string>` and `<utility>` (and any other directly used headers).
+- [ ] **Header not self-contained.** (`vendor/afterhours/src/plugins/input_system.h:4`) — includes only `<map>`/`<variant>` yet uses `std::string`, `std::to_string`, and `std::pair`, relying on transitive includes. Fix: add `<string>` and `<utility>` (and any other directly used headers).
 
 - [ ] **No pause/menu/restart state.** (`src/main.cpp:392`) — the main loop only checks `WindowShouldClose`; there is no pause, menu, game-over, or restart state machine. Fix: add a game-state machine and a pause key.
 
