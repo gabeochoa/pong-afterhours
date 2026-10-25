@@ -148,6 +148,6 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **No tests or test target.** (`makefile:44`) — the repo has no test files and the makefile defines only `all`/`clean`, so regressions have no gate. Fix: add tests plus a `test` target.
 
-- [ ] **No gamepad-connection feedback.** (`src/main.cpp:387`) — the `RenderConnectedGamepads` render system is commented out, so players cannot tell whether a second pad is connected. Fix: re-enable it or show connection status another way.
+- [x] **No gamepad-connection feedback.** (`src/main.cpp:387`) — the `RenderConnectedGamepads` render system is commented out, so players cannot tell whether a second pad is connected. Fix: re-enable it or show connection status another way.
 
 - [ ] **No sound or audio init.** (`src/main.cpp:343`) — no `InitAudioDevice`/`PlaySound` anywhere, so hits and scores are silent. Fix: add audio feedback for hits and scores.

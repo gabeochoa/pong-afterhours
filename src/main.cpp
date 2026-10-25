@@ -448,8 +448,8 @@ int main(void) {
         [&]() { raylib::ClearBackground(raylib::DARKGRAY); });
     systems.register_render_system(std::make_unique<RenderScore>());
     systems.register_render_system(std::make_unique<RenderEntities>());
-    // systems.register_render_system(
-    // std::make_unique<input::RenderConnectedGamepads>());
+    systems.register_render_system(
+        std::make_unique<input::RenderConnectedGamepads>());
     systems.register_render_system(std::make_unique<RenderFPS>());
   }
 
