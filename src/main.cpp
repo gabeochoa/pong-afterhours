@@ -449,7 +449,7 @@ int main(void) {
           vec2{(float)GAME_W / 2.f, (float)GAME_H / 2.f});
       ball.get<HasVelocity>().vel = {0, 0};
     }
-    float dt = raylib::GetFrameTime();
+    float dt = std::min(raylib::GetFrameTime(), 1.f / 30.f);
     systems.tick_all(dt);
     raylib::BeginDrawing();
     systems.render_all(dt);
