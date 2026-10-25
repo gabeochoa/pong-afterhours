@@ -70,7 +70,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **Serve is fully deterministic (always up-left).** (`src/main.cpp:150`) — every launch sets `vel = (-0.5, -1.0)`; P1 always receives first with the same angle. Fix: randomise serve direction/angle per serve, or serve toward the conceding player.
 
-- [ ] **Single-step discrete collision can tunnel.** (`src/main.cpp:179`) — one `vel * sz * dt` step plus AABB overlap; a large dt moves the ball more than the 30px paddle thickness, skipping the paddle entirely. Fix: substep the movement or use swept AABB.
+- [x] **Single-step discrete collision can tunnel.** (`src/main.cpp:179`) — one `vel * sz * dt` step plus AABB overlap; a large dt moves the ball more than the 30px paddle thickness, skipping the paddle entirely. Fix: substep the movement or use swept AABB.
 
 - [ ] **Paddle wall hit discards the move instead of clamping.** (`src/main.cpp:184`) — if a paddle (`PlayerID`) is out of y-bounds, `for_each_with` returns without updating/clamping, so it stops short of the edge and never recovers if spawned outside. Fix: clamp `p.y` to `[0, height - size.y]` and apply the update.
 

@@ -55,8 +55,8 @@ struct window_manager : developer::Plugin {
     return resolutions;
   }
   static Resolution fetch_current_resolution() {
-    return Resolution{.width = raylib::GetRenderWidth(),
-                      .height = raylib::GetRenderHeight()};
+    return Resolution{.width = raylib::GetScreenWidth(),
+                      .height = raylib::GetScreenHeight()};
   }
 
   static void set_window_size(int width, int height) {
