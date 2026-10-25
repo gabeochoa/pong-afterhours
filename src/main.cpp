@@ -38,6 +38,8 @@ template <typename T> int sgn(T val) { return (T(0) < val) - (val < T(0)); }
 } // namespace myutil
 
 constexpr int WIN_SCORE = 5;
+constexpr float BALL_SPEED = 500.f;
+constexpr float PADDLE_SPEED = 450.f;
 constexpr int GAME_W = 1280;
 constexpr int GAME_H = 720;
 
@@ -205,9 +207,9 @@ struct ImpulseBall : System<HasVelocity> {
 struct MoveAndBounce : System<Transform, HasVelocity> {
   virtual void for_each_with(Entity &entity, Transform &transform,
                              HasVelocity &vel, float dt) override {
-    float sz = 500;
+    float speed = entity.has<PlayerID>() ? PADDLE_SPEED : BALL_SPEED;
     vec2 p = transform.pos();
-    p += vel.vel * sz * dt;
+    p += vel.vel * speed * dt;
 
     if (entity.has<PlayerID>()) {
       p.y = std::clamp(p.y, 0.f, (float)GAME_H - transform.size.y);
