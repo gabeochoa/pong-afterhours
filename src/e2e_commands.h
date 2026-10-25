@@ -1,25 +1,13 @@
-// Pong's e2e commands: test hooks (hold_key, release_key, teleport_ball,
-// center_paddles) and state assertions (assert_paused, assert_score, ...),
-// plus the library's perf commands (expect_fps_above).
-// Handled like any other command: a System<PendingE2ECommand> that consumes
-// or fails the command. Assertions use retry_with() so a state that lands a
-// frame or two after the assertion still passes instead of failing on first
-// evaluation; malformed commands fail() immediately.
-//
-// Included after the game types in main.cpp, since the assertions inspect
-// GameState / Transform / HasVelocity / PlayerID.
+// Pong's e2e test hooks and state assertions. Assertions use cmd.expect so a
+// state landing a frame late still passes; malformed commands fail().
 #pragma once
 
-// Upstream's animation header shadows a field; silence that one warning for
-// the upstream includes only, not for pong's own code.
+// Upstream's animation header shadows a field; silence it for upstream only.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
-#include "afterhours/src/core/key_codes.h"
 #include "afterhours/src/graphics.h"
-#include "afterhours/src/plugins/e2e_testing/command_handlers.h"
 #include "afterhours/src/plugins/e2e_testing/e2e_testing.h"
 #include "afterhours/src/plugins/e2e_testing/perf_commands.h"
-#include "afterhours/src/plugins/e2e_testing/test_input.h"
 #pragma GCC diagnostic pop
 
 namespace pong_e2e {
@@ -49,46 +37,6 @@ static Entity *find_paddle(int id) {
   }
   return nullptr;
 }
-
-// Pass: consume. Not yet true: retry next frame with the mismatch to report
-// if the command times out.
-static void expect(PendingE2ECommand &cmd, bool ok,
-                   const std::string &mismatch) {
-  if (ok)
-    cmd.consume();
-  else
-    cmd.retry_with(mismatch);
-}
-
-struct HoldKeyCommand : System<PendingE2ECommand> {
-  virtual void for_each_with(Entity &, PendingE2ECommand &cmd,
-                             const float) override {
-    if (cmd.is_consumed() || !cmd.is("hold_key"))
-      return;
-    int code = key_from_name(cmd.arg(0));
-    if (code == 0) {
-      cmd.fail("hold_key: unknown key '" + cmd.arg(0) + "'");
-      return;
-    }
-    input_injector::set_key_down(code);
-    cmd.consume();
-  }
-};
-
-struct ReleaseKeyCommand : System<PendingE2ECommand> {
-  virtual void for_each_with(Entity &, PendingE2ECommand &cmd,
-                             const float) override {
-    if (cmd.is_consumed() || !cmd.is("release_key"))
-      return;
-    int code = key_from_name(cmd.arg(0));
-    if (code == 0) {
-      cmd.fail("release_key: unknown key '" + cmd.arg(0) + "'");
-      return;
-    }
-    input_injector::set_key_up(code);
-    cmd.consume();
-  }
-};
 
 struct CenterPaddlesCommand : System<PendingE2ECommand> {
   virtual void for_each_with(Entity &, PendingE2ECommand &cmd,
@@ -144,7 +92,7 @@ struct AssertPausedCommand : System<PendingE2ECommand> {
       cmd.fail("assert_paused needs 0|1");
       return;
     }
-    expect(cmd, state->paused == (*want != 0),
+    cmd.expect(state->paused == (*want != 0),
            "paused is " + std::string(state->paused ? "true" : "false"));
   }
 };
@@ -161,7 +109,7 @@ struct AssertScoreCommand : System<PendingE2ECommand> {
       cmd.fail("assert_score needs left right");
       return;
     }
-    expect(cmd, state->left == *left && state->right == *right,
+    cmd.expect(state->left == *left && state->right == *right,
            "score is " + std::to_string(state->left) + ":" +
                std::to_string(state->right));
   }
@@ -178,7 +126,7 @@ struct AssertGameOverCommand : System<PendingE2ECommand> {
       cmd.fail("assert_game_over needs 0|1");
       return;
     }
-    expect(cmd, state->game_over == (*want != 0),
+    cmd.expect(state->game_over == (*want != 0),
            "game_over is " +
                std::string(state->game_over ? "true" : "false"));
   }
@@ -195,7 +143,7 @@ struct AssertBallMovingCommand : System<PendingE2ECommand> {
       return;
     }
     vec2 vel = ball->get<HasVelocity>().vel;
-    expect(cmd, std::abs(vel.x) > 0.01f || std::abs(vel.y) > 0.01f,
+    cmd.expect(std::abs(vel.x) > 0.01f || std::abs(vel.y) > 0.01f,
            "ball is stopped");
   }
 };
@@ -211,7 +159,7 @@ struct AssertBallStoppedCommand : System<PendingE2ECommand> {
       return;
     }
     vec2 vel = ball->get<HasVelocity>().vel;
-    expect(cmd, std::abs(vel.x) <= 0.01f && std::abs(vel.y) <= 0.01f,
+    cmd.expect(std::abs(vel.x) <= 0.01f && std::abs(vel.y) <= 0.01f,
            "ball is moving");
   }
 };
@@ -232,7 +180,7 @@ struct AssertBallVelCommand : System<PendingE2ECommand> {
     float vel = cmd.is("assert_ball_vel_x")
                     ? ball->get<HasVelocity>().vel.x
                     : ball->get<HasVelocity>().vel.y;
-    expect(cmd, cmp == "gt" ? vel > *value : vel < *value,
+    cmd.expect(cmp == "gt" ? vel > *value : vel < *value,
            "ball vel is " + std::to_string(vel));
   }
 };
@@ -251,7 +199,7 @@ struct AssertPaddleYCommand : System<PendingE2ECommand> {
       return;
     }
     float y = paddle->get<Transform>().pos().y;
-    expect(cmd, cmp == "lt" ? y < *value : y > *value,
+    cmd.expect(cmp == "lt" ? y < *value : y > *value,
            "paddle y is " + std::to_string(y));
   }
 };
@@ -260,8 +208,6 @@ inline void register_pong_commands(SystemManager &systems) {
   perf_commands::set_provider(
       {.get_fps = [] { return std::optional<float>(graphics::get_fps()); }});
   perf_commands::register_perf_commands(systems);
-  systems.register_update_system(std::make_unique<HoldKeyCommand>());
-  systems.register_update_system(std::make_unique<ReleaseKeyCommand>());
   systems.register_update_system(std::make_unique<CenterPaddlesCommand>());
   systems.register_update_system(std::make_unique<TeleportBallCommand>());
   systems.register_update_system(std::make_unique<AssertPausedCommand>());
