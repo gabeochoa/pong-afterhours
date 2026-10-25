@@ -90,7 +90,11 @@ struct window_manager : developer::Plugin {
 
     virtual void for_each_with(Entity &, ProvidesCurrentResolution &pCR,
                                float) override {
-      if (pCR.should_refetch) {
+      bool resized = false;
+#ifdef AFTER_HOURS_USE_RAYLIB
+      resized = raylib::IsWindowResized();
+#endif
+      if (pCR.should_refetch || resized) {
         pCR.current_resolution = fetch_current_resolution();
         pCR.should_refetch = false;
       }

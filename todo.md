@@ -66,7 +66,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 ## Medium
 
-- [ ] **Out-of-bounds test uses top-left x only.** (`src/main.cpp:191`) — `p.x < -10 || p.x > map_width + 10` tests the top-left corner, so the ball resets with ~20px still visible on the left and only after fully off-screen on the right (ball size is 30). Fix: test `p.x + size.x < 0` / `p.x > width`.
+- [x] **Out-of-bounds test uses top-left x only.** (`src/main.cpp:191`) — `p.x < -10 || p.x > map_width + 10` tests the top-left corner, so the ball resets with ~20px still visible on the left and only after fully off-screen on the right (ball size is 30). Fix: test `p.x + size.x < 0` / `p.x > width`.
 
 - [ ] **Serve is fully deterministic (always up-left).** (`src/main.cpp:150`) — every launch sets `vel = (-0.5, -1.0)`; P1 always receives first with the same angle. Fix: randomise serve direction/angle per serve, or serve toward the conceding player.
 
