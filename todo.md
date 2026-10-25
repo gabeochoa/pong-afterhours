@@ -40,7 +40,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **Resolution fetched once, never re-fetched.** (`vendor/afterhours/src/plugins/window_manager.h:89`) — `CollectCurrentResolution` clears `should_refetch` after the first fetch and nothing ever sets it true again (no resize/fullscreen trigger). Fix: set `should_refetch = true` on resize/fullscreen events and re-fetch then.
 
-- [ ] **HiDPI mismatch: framebuffer pixels vs logical coordinates.** (`vendor/afterhours/src/plugins/window_manager.h:58`) — `fetch_current_resolution()` uses `GetRenderWidth/Height` (framebuffer px), but draw/logic use logical coordinates — on Retina the bounds are 2x, so the ball exits the visible view. Fix: use `GetScreenWidth/Height` (logical size) for game bounds.
+- [x] **HiDPI mismatch: framebuffer pixels vs logical coordinates.** (`vendor/afterhours/src/plugins/window_manager.h:58`) — `fetch_current_resolution()` uses `GetRenderWidth/Height` (framebuffer px), but draw/logic use logical coordinates — on Retina the bounds are 2x, so the ball exits the visible view. Fix: use `GetScreenWidth/Height` (logical size) for game bounds.
 
 - [ ] **Hardcoded spawn geometry ignores the resolution singleton.** (`src/main.cpp:316`) — `make_paddle` uses x = 150/1100 and y = 720/2, `make_ball` uses 1280/2, 720/2, while bounds come from `ProvidesCurrentResolution`; a different window size misplaces spawns. Fix: derive spawn positions from the resolution singleton / named constants.
 

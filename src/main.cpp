@@ -268,7 +268,8 @@ struct ImpulsePaddle : System<HasVelocity, PlayerID> {
         playerID.id == 0 ? InputAction::P1Down : InputAction::P2Down;
 
     for (auto &actions_done : inpc.inputs()) {
-      if (actions_done.id != playerID.id)
+      // Keyboard actions are tagged id -1; gamepad actions carry the pad id.
+      if (actions_done.id != playerID.id && actions_done.id != -1)
         continue;
       if (actions_done.action == up_action)
         up = true;
