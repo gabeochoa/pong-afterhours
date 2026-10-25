@@ -371,69 +371,70 @@ Entity &make_ball() {
 #include "e2e_commands.h"
 
 int main(int argc, char *argv[]) {
-  graphics::set_config_flags(graphics::FLAG_WINDOW_RESIZABLE |
-                             graphics::FLAG_VSYNC_HINT |
-                             raylib::FLAG_WINDOW_HIGHDPI);
-  graphics::set_exit_key(raylib::KEY_NULL);
-  graphics::init_window(GAME_W, GAME_H, "pong-afterhours");
-  if (!graphics::is_window_ready()) {
-    std::cerr << "error: failed to create window\n";
-    return 1;
-  }
-  afterhours::InitAudioDevice();
-  hit_sound = synth::beep(330.f, 0.09f);
-  score_sound = synth::beep(660.f, 0.16f);
-
-  game_font = load_font_from_file(FONT_PATH, 32);
-  if (!font_is_usable(game_font))
-    game_font = get_default_font();
-
-  auto &singletons = EntityHelper::createEntity();
-  {
-    input::add_singleton_components(singletons, get_mapping());
-    window_manager::add_singleton_components(singletons, 200);
-    singletons.addComponent<GameState>();
-  }
-  GameState &state = singletons.get<GameState>();
-  graphics::set_target_fps(
-      singletons.get<window_manager::ProvidesTargetFPS>().fps);
-
-  make_paddle(0);
-  make_paddle(1);
-  Entity &ball = make_ball();
-
-  // Entities are created in a temp array; tick() normally merges them, but
-  // the game starts paused (no tick yet) while render already needs them.
-  EntityHelper::merge_entity_arrays();
-
-  auto e2e = testing::E2EApp::create(argc, argv,
-                                     pong_e2e::register_pong_commands,
-                                     "tests/e2e/screenshots");
-  if (testing::should_run_e2e(argc, argv) && !e2e)
-    return 1;
-
   SystemManager systems;
+  std::unique_ptr<testing::E2EApp> e2e;
+  graphics::RenderTextureType target{};
+  GameState *state = nullptr;
+  Entity *ball = nullptr;
+  int exit_code = 0;
 
-  // debug systems
-  {
+  graphics::RunConfig cfg;
+  cfg.width = GAME_W;
+  cfg.height = GAME_H;
+  cfg.title = "pong-afterhours";
+  cfg.target_fps = 200;
+  cfg.flags = graphics::FLAG_WINDOW_RESIZABLE | graphics::FLAG_VSYNC_HINT |
+              raylib::FLAG_WINDOW_HIGHDPI;
+
+  cfg.init = [&] {
+    if (!graphics::is_window_ready()) {
+      std::cerr << "error: failed to create window\n";
+      exit_code = 1;
+      graphics::request_quit();
+      return;
+    }
+    graphics::set_exit_key(raylib::KEY_NULL);
+    afterhours::InitAudioDevice();
+    hit_sound = synth::beep(330.f, 0.09f);
+    score_sound = synth::beep(660.f, 0.16f);
+
+    game_font = load_font_from_file(FONT_PATH, 32);
+    if (!font_is_usable(game_font))
+      game_font = get_default_font();
+
+    auto &singletons = EntityHelper::createEntity();
+    input::add_singleton_components(singletons, get_mapping());
+    window_manager::add_singleton_components(singletons, cfg.target_fps);
+    state = &singletons.addComponent<GameState>();
+
+    make_paddle(0);
+    make_paddle(1);
+    ball = &make_ball();
+
+    // Entities are created in a temp array; tick() normally merges them, but
+    // the game starts paused (no tick yet) while render already needs them.
+    EntityHelper::merge_entity_arrays();
+
+    e2e = testing::E2EApp::create(argc, argv, pong_e2e::register_pong_commands,
+                                  "tests/e2e/screenshots");
+    if (testing::should_run_e2e(argc, argv) && !e2e) {
+      exit_code = 1;
+      graphics::request_quit();
+      return;
+    }
+
     window_manager::enforce_singletons(systems);
     input::enforce_singletons(systems);
-  }
 
-  // External plugins first: systems run in registration order, and the
-  // gameplay systems below read this frame's input collector.
-  {
+    // External plugins first: gameplay systems read this frame's input.
     input::register_update_systems(systems);
     window_manager::register_update_systems(systems);
-  }
 
-  systems.register_update_system(std::make_unique<ImpulseBall>());
-  systems.register_update_system(std::make_unique<ImpulsePaddle>());
-  systems.register_update_system(std::make_unique<MoveAndBounce>());
-  systems.register_update_system(std::make_unique<Collide>());
+    systems.register_update_system(std::make_unique<ImpulseBall>());
+    systems.register_update_system(std::make_unique<ImpulsePaddle>());
+    systems.register_update_system(std::make_unique<MoveAndBounce>());
+    systems.register_update_system(std::make_unique<Collide>());
 
-  // renders
-  {
     systems.register_render_system(
         [](float) { graphics::clear_background(raylib::DARKGRAY); });
     systems.register_render_system(std::make_unique<RenderScore>());
@@ -441,42 +442,40 @@ int main(int argc, char *argv[]) {
     systems.register_render_system(
         std::make_unique<input::RenderConnectedGamepads>());
     systems.register_render_system(std::make_unique<RenderFPS>());
-  }
 
-  graphics::RenderTextureType target = load_render_texture(GAME_W, GAME_H);
+    target = load_render_texture(GAME_W, GAME_H);
+  };
 
-  while (!graphics::window_should_close()) {
+  cfg.frame = [&] {
     float dt = std::min(graphics::get_frame_time(), 1.f / 30.f);
     if (e2e)
       e2e->tick(dt);
-    // platform_input routes to the injected test input under --e2e and to
-    // the real keyboard otherwise, so the same keys drive both.
+    // platform_input reads injected input under --e2e, the keyboard otherwise.
     if (testing::platform_input::is_key_pressed(raylib::KEY_R)) {
-      state.left = state.right = 0;
-      state.game_over = false;
-      state.paused = false;
-      ball.get<Transform>().update(
+      state->left = state->right = 0;
+      state->game_over = false;
+      state->paused = false;
+      ball->get<Transform>().update(
           vec2{(float)GAME_W / 2.f, (float)GAME_H / 2.f});
-      ball.get<HasVelocity>().vel = {0, 0};
+      ball->get<HasVelocity>().vel = {0, 0};
     }
     if ((testing::platform_input::is_key_pressed(raylib::KEY_P) ||
          testing::platform_input::is_key_pressed(raylib::KEY_ESCAPE)) &&
-        !state.game_over)
-      state.paused = !state.paused;
-    if (!state.paused && !state.game_over)
+        !state->game_over)
+      state->paused = !state->paused;
+    if (!state->paused && !state->game_over)
       systems.tick_all(EntityHelper::get_entities_for_mod(), dt);
     begin_texture_mode(target);
     systems.render_all(dt);
-    if (state.paused) {
-      // Centred + shadow: measure, then offset the shadow call by half the
-      // width (see draw_text_centered).
+    if (state->paused) {
+      // Centred + shadow: measure, then offset by half the width.
       auto draw_menu_text = [](const char *text) {
         const float w = measure_text(game_font, text, 30, 1.f).x;
         draw_text_with_shadow(game_font, text, GAME_W / 2.f - w * 0.5f,
                               GAME_H / 2.f - 20, 30, raylib::RAYWHITE,
                               raylib::BLACK);
       };
-      if (state.left == 0 && state.right == 0)
+      if (state->left == 0 && state->right == 0)
         draw_menu_text("PONG - P to play");
       else
         draw_menu_text("PAUSED - P to resume");
@@ -495,18 +494,19 @@ int main(int argc, char *argv[]) {
     if (e2e) {
       e2e->post_render(target);
       if (e2e->finished())
-        break;
+        graphics::request_quit();
     }
-  }
+  };
 
-  int exit_code = 0;
-  if (e2e)
-    exit_code = e2e->finish();
+  cfg.cleanup = [&] {
+    if (e2e)
+      exit_code = e2e->finish();
+    unload_render_texture(target);
+    afterhours::UnloadSound(hit_sound);
+    afterhours::UnloadSound(score_sound);
+    afterhours::CloseAudioDevice();
+  };
 
-  unload_render_texture(target);
-  afterhours::UnloadSound(hit_sound);
-  afterhours::UnloadSound(score_sound);
-  afterhours::CloseAudioDevice();
-  graphics::close_window();
+  graphics::run(cfg);
   return exit_code;
 }
