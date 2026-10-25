@@ -29,7 +29,7 @@ H_FILES := $(wildcard src/**/*.h src/**/*.hpp)
 OBJ_DIR := ./output
 OBJ_FILES := $(SRC_FILES:%.cpp=$(OBJ_DIR)/%.o)
 
-DEPENDS := $(patsubst %.cpp,%.d,$(SOURCES))
+DEPENDS := $(patsubst %.cpp,%.d,$(SRC_FILES))
 -include $(DEPENDS)
 
 
