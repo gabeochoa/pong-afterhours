@@ -490,15 +490,13 @@ int main(int argc, char *argv[]) {
     end_texture_mode();
     graphics::begin_drawing();
     graphics::clear_background(raylib::BLACK);
-    // Present the fixed game texture letterboxed into the resizable
-    // window; see afterhours docs/letterboxing.md. The flipped source
-    // rect is the raylib render-texture flip.
-    const auto vp = window_manager::content_viewport(
-        graphics::get_screen_width(), graphics::get_screen_height());
-    draw_texture_pro(
-        target.texture,
-        raylib::Rectangle{0.f, 0.f, (float)GAME_W, -(float)GAME_H},
-        vp.dest, vec2{0, 0}, 0.f, raylib::WHITE);
+    // Letterbox the fixed-size game texture into the resizable window.
+    draw_render_texture(target,
+                        window_manager::content_viewport(
+                            graphics::get_screen_width(),
+                            graphics::get_screen_height())
+                            .dest,
+                        raylib::WHITE);
     graphics::end_drawing();
     if (e2e) {
       e2e->post_render(target);
