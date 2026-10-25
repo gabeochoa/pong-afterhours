@@ -2,6 +2,8 @@
 #pragma once
 
 #include <map>
+#include <string>
+#include <utility>
 #include <variant>
 
 #include "../base_component.h"
