@@ -174,6 +174,11 @@ struct PlayerID : BaseComponent {
 };
 
 struct ImpulseBall : System<HasVelocity> {
+  input::PossibleInputCollector<InputAction> inpc;
+
+  void once(float) override {
+    inpc = input::get_input_collector<InputAction>();
+  }
 
   // Any player may serve: there is no serve ownership in pong, so Launch
   // deliberately ignores the action's player id (unlike ImpulsePaddle).
@@ -181,8 +186,6 @@ struct ImpulseBall : System<HasVelocity> {
     if (entity.has<PlayerID>())
       return;
 
-    input::PossibleInputCollector<InputAction> inpc =
-        input::get_input_collector<InputAction>();
     if (!inpc.has_value()) {
       return;
     }
@@ -243,12 +246,15 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
 };
 
 struct ImpulsePaddle : System<HasVelocity, PlayerID> {
+  input::PossibleInputCollector<InputAction> inpc;
+
+  void once(float) override {
+    inpc = input::get_input_collector<InputAction>();
+  }
 
   virtual void for_each_with(Entity &, HasVelocity &vel, PlayerID &playerID,
                              float) override {
 
-    input::PossibleInputCollector<InputAction> inpc =
-        input::get_input_collector<InputAction>();
     if (!inpc.has_value()) {
       vel.vel.y = 0.f;
       return;
