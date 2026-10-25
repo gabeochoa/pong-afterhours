@@ -1,5 +1,6 @@
 // Pong's e2e commands: test hooks (hold_key, release_key, teleport_ball,
-// center_paddles) and state assertions (assert_paused, assert_score, ...).
+// center_paddles) and state assertions (assert_paused, assert_score, ...),
+// plus the library's perf commands (expect_fps_above).
 // Handled like any other command: a System<PendingE2ECommand> that consumes
 // or fails the command. Assertions use retry_with() so a state that lands a
 // frame or two after the assertion still passes instead of failing on first
@@ -17,6 +18,7 @@
 #include "afterhours/src/graphics.h"
 #include "afterhours/src/plugins/e2e_testing/command_handlers.h"
 #include "afterhours/src/plugins/e2e_testing/e2e_testing.h"
+#include "afterhours/src/plugins/e2e_testing/perf_commands.h"
 #include "afterhours/src/plugins/e2e_testing/test_input.h"
 #pragma GCC diagnostic pop
 
@@ -254,22 +256,10 @@ struct AssertPaddleYCommand : System<PendingE2ECommand> {
   }
 };
 
-struct AssertFpsCommand : System<PendingE2ECommand> {
-  virtual void for_each_with(Entity &, PendingE2ECommand &cmd,
-                             const float) override {
-    if (cmd.is_consumed() || !cmd.is("assert_fps_gt"))
-      return;
-    auto want = cmd.maybe_arg_as<float>(0);
-    if (!want) {
-      cmd.fail("assert_fps_gt needs value");
-      return;
-    }
-    float fps = graphics::get_fps();
-    expect(cmd, fps > *want, "fps is " + std::to_string(fps));
-  }
-};
-
 inline void register_pong_commands(SystemManager &systems) {
+  perf_commands::set_provider(
+      {.get_fps = [] { return std::optional<float>(graphics::get_fps()); }});
+  perf_commands::register_perf_commands(systems);
   systems.register_update_system(std::make_unique<HoldKeyCommand>());
   systems.register_update_system(std::make_unique<ReleaseKeyCommand>());
   systems.register_update_system(std::make_unique<CenterPaddlesCommand>());
@@ -283,7 +273,6 @@ inline void register_pong_commands(SystemManager &systems) {
       std::make_unique<AssertBallStoppedCommand>());
   systems.register_update_system(std::make_unique<AssertBallVelCommand>());
   systems.register_update_system(std::make_unique<AssertPaddleYCommand>());
-  systems.register_update_system(std::make_unique<AssertFpsCommand>());
 }
 
 } // namespace pong_e2e

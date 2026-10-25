@@ -9,5 +9,5 @@ wait_frames 600
 key SPACE
 wait_frames 30
 assert_ball_moving
-assert_fps_gt 60
+expect_fps_above 60
 screenshot 07_performance
