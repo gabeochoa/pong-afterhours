@@ -337,6 +337,11 @@ struct Collide : System<Transform, HasVelocity> {
       return;
 
     hasVel.vel.x *= -1.f;
+
+    vec2 p = transform.pos();
+    p.x = hasVel.vel.x > 0 ? other.pos().x + other.size.x
+                           : other.pos().x - transform.size.x;
+    transform.update(p);
   }
 };
 

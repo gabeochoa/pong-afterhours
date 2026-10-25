@@ -28,7 +28,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **P2 keyboard input is dead via the id filter.** (`src/main.cpp:216`) — `ImpulsePaddle` drops actions with `actions_done.id != playerID.id`, but keyboard actions are recorded with `id = 0`; P2 (`id = 1`) therefore never sees keyboard input even if distinct keys were mapped. Fix: share keyboard input with both paddles (keyed by binding, not gamepad id) or tag keyboard actions per-player.
 
-- [ ] **Keyboard input duplicated per gamepad id.** (`vendor/afterhours/src/plugins/input_system.h:310`) — the `do { ... } while (i <= max_gamepad_id_available)` loop re-emits keyboard results for every id, while `check_*` ignores `id` for `KeyCode` inputs. Fix: poll keyboard once outside the per-gamepad loop and tag it `Keyboard` / `id = -1`.
+- [x] **Keyboard input duplicated per gamepad id.** (`vendor/afterhours/src/plugins/input_system.h:310`) — the `do { ... } while (i <= max_gamepad_id_available)` loop re-emits keyboard results for every id, while `check_*` ignores `id` for `KeyCode` inputs. Fix: poll keyboard once outside the per-gamepad loop and tag it `Keyboard` / `id = -1`.
 
 - [ ] **`fetch_max_gampad_id` returns -1 when all gamepads present.** (`vendor/afterhours/src/plugins/input_system.h:218`) — `result = -1` is set only on the first unavailable id (`break`); if all 8 ids are available the loop ends with `result` still -1, and a gapped layout (pad 0 missing, pad 1 present) also truncates to -1. Fix: scan all ids, track the highest available id, and handle the all-present case (result = `MAX_GAMEPAD_ID - 1`).
 
