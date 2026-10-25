@@ -75,8 +75,6 @@ struct RenderFPS : System<window_manager::ProvidesCurrentResolution> {
   }
 };
 
-const vec2 button_size = vec2{100, 50};
-
 enum class InputAction {
   None,
   P1Up,

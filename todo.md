@@ -140,7 +140,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **`NOFLAGS` dead; `-Werror` never applied.** (`makefile:45`) — `NOFLAGS` defines `-Werror`, but `all` compiles with only `$(FLAGS)`. Fix: add `$(NOFLAGS)` to the compile command.
 
-- [ ] **`button_size` unused.** (`src/main.cpp:54`) — `const vec2 button_size = {100, 50};` is never referenced (grep shows only the definition). Fix: remove it.
+- [x] **`button_size` unused.** (`src/main.cpp:54`) — `const vec2 button_size = {100, 50};` is never referenced (grep shows only the definition). Fix: remove it.
 
 - [ ] **`focus_rect` unused.** (`src/main.cpp:106`) — `Transform::focus_rect()` is defined but never called (grep shows only the definition). Fix: remove it, or use it for a focus/debug outline.
 
