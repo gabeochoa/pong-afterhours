@@ -33,8 +33,8 @@ NOFLAGS = -Wno-deprecated-volatile -Wno-missing-field-initializers \
 		  -Wno-c99-extensions -Wno-unused-function -Wno-sign-conversion \
 		  -Wno-implicit-int-float-conversion \
 		  -Wno-float-conversion -Werror
-INCLUDES = -Ivendor/ -Isrc/
-LIBS = -L. -Lvendor/ $(RAYLIB_LIB)
+INCLUDES = -Ivendor/ -Ivendor/afterhours/vendor -Isrc/
+LIBS = $(RAYLIB_LIB)
 
 SRC_FILES := $(wildcard src/*.cpp src/**/*.cpp)
 # Top-level src/*.h too: src/**/*.h alone only matches subdirectories, so
