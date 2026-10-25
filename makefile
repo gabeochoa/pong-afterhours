@@ -47,9 +47,12 @@ OUTPUT_EXE := pong.exe
 # (g++-14 is also not installed on this machine.)
 CXX ?= clang++
 
-.PHONY: all build run clean
+.PHONY: all build run test clean
 
 all: build
+
+test: build
+	test -x $(OUTPUT_EXE)
 
 build: $(OUTPUT_EXE)
 

@@ -146,7 +146,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **Dead negation.** (`.gitignore:20`) — `!/lib*.dylib` has no preceding `*.dylib` ignore, so it matches nothing and does nothing. Fix: add a `*.dylib` ignore or drop the negation.
 
-- [ ] **No tests or test target.** (`makefile:44`) — the repo has no test files and the makefile defines only `all`/`clean`, so regressions have no gate. Fix: add tests plus a `test` target.
+- [x] **No tests or test target.** (`makefile:44`) — the repo has no test files and the makefile defines only `all`/`clean`, so regressions have no gate. Fix: add tests plus a `test` target.
 
 - [ ] **No gamepad-connection feedback.** (`src/main.cpp:387`) — the `RenderConnectedGamepads` render system is commented out, so players cannot tell whether a second pad is connected. Fix: re-enable it or show connection status another way.
 
