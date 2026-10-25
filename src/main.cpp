@@ -213,11 +213,11 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
         p.y = 2 * (GAME_H - transform.size.y) - p.y;
     }
 
-    if (p.x < -10 || p.x > GAME_W + 10) {
+    if (p.x + transform.size.x < 0 || p.x > GAME_W) {
       auto scored = EntityQuery().whereHasComponent<GameState>().gen_first();
       if (scored) {
         GameState &state = scored.asE().get<GameState>();
-        if (p.x < -10)
+        if (p.x + transform.size.x < 0)
           state.right++;
         else
           state.left++;

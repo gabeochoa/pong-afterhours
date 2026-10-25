@@ -14,55 +14,55 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 ## High
 
-- [ ] **No scoring, winner, or game end on out-of-bounds.** (`src/main.cpp:191`) — out-of-bounds just recentres the ball and zeroes velocity, with `// TODO add to score`; no score state exists anywhere. Fix: award a point by exit side before reset; store/display scores; add a win condition.
+- [x] **No scoring, winner, or game end on out-of-bounds.** (`src/main.cpp:191`) — out-of-bounds just recentres the ball and zeroes velocity, with `// TODO add to score`; no score state exists anywhere. Fix: award a point by exit side before reset; store/display scores; add a win condition.
 
 - [x] **`Collide` flips both velocity axes on any overlap.** (`src/main.cpp:301`) — `hasVel.vel = hasVel.vel * -1.f` reverses x and y even for a head-on paddle-face hit, wrongly changing the vertical angle. Fix: flip only the penetration/collision-normal axis (x for a paddle face).
 
-- [ ] **`Collide` lacks an approaching check.** (`src/main.cpp:298`) — flips on any overlap with no check on velocity direction, so it flips the ball even when moving away while still overlapping, sending it back into the paddle. Fix: flip only when the entity is moving toward the collider (velocity along the collision normal).
+- [x] **`Collide` lacks an approaching check.** (`src/main.cpp:298`) — flips on any overlap with no check on velocity direction, so it flips the ball even when moving away while still overlapping, sending it back into the paddle. Fix: flip only when the entity is moving toward the collider (velocity along the collision normal).
 
 - [x] **`Collide` has no separation or cooldown.** (`src/main.cpp:301`) — no push-out, no per-pair cooldown/timestamp; a ball still overlapping next frame flips again, causing jitter/double-hits and FPS-dependent outcomes. Fix: push the ball out along the normal on collision and/or add a short per-pair cooldown.
 
-- [ ] **`Collide` flips paddle velocity too.** (`src/main.cpp:301`) — `for_each_with` runs for every `Transform + HasVelocity` entity, including paddles (which have `HasVelocity`), and flips its own velocity on overlap — a ball–paddle hit reverses the paddle as well as the ball. Fix: only flip the ball (e.g. skip entities with `PlayerID`), and reverse x only.
+- [x] **`Collide` flips paddle velocity too.** (`src/main.cpp:301`) — `for_each_with` runs for every `Transform + HasVelocity` entity, including paddles (which have `HasVelocity`), and flips its own velocity on overlap — a ball–paddle hit reverses the paddle as well as the ball. Fix: only flip the ball (e.g. skip entities with `PlayerID`), and reverse x only.
 
 - [x] **Shared keyboard mapping for both paddles.** (`src/main.cpp:67`) — `get_mapping()` gives both players `KEY_UP`/`KEY_DOWN`; there are no W/S (or other) keys for P2, so one keyboard cannot drive two paddles independently. Fix: add per-player keyboard bindings (e.g. arrows for P1, W/S for P2).
 
-- [ ] **P2 keyboard input is dead via the id filter.** (`src/main.cpp:216`) — `ImpulsePaddle` drops actions with `actions_done.id != playerID.id`, but keyboard actions are recorded with `id = 0`; P2 (`id = 1`) therefore never sees keyboard input even if distinct keys were mapped. Fix: share keyboard input with both paddles (keyed by binding, not gamepad id) or tag keyboard actions per-player.
+- [x] **P2 keyboard input is dead via the id filter.** (`src/main.cpp:216`) — `ImpulsePaddle` drops actions with `actions_done.id != playerID.id`, but keyboard actions are recorded with `id = 0`; P2 (`id = 1`) therefore never sees keyboard input even if distinct keys were mapped. Fix: share keyboard input with both paddles (keyed by binding, not gamepad id) or tag keyboard actions per-player.
 
 - [x] **Keyboard input duplicated per gamepad id.** (`vendor/afterhours/src/plugins/input_system.h:310`) — the `do { ... } while (i <= max_gamepad_id_available)` loop re-emits keyboard results for every id, while `check_*` ignores `id` for `KeyCode` inputs. Fix: poll keyboard once outside the per-gamepad loop and tag it `Keyboard` / `id = -1`.
 
-- [ ] **`fetch_max_gampad_id` returns -1 when all gamepads present.** (`vendor/afterhours/src/plugins/input_system.h:218`) — `result = -1` is set only on the first unavailable id (`break`); if all 8 ids are available the loop ends with `result` still -1, and a gapped layout (pad 0 missing, pad 1 present) also truncates to -1. Fix: scan all ids, track the highest available id, and handle the all-present case (result = `MAX_GAMEPAD_ID - 1`).
+- [x] **`fetch_max_gampad_id` returns -1 when all gamepads present.** (`vendor/afterhours/src/plugins/input_system.h:218`) — `result = -1` is set only on the first unavailable id (`break`); if all 8 ids are available the loop ends with `result` still -1, and a gapped layout (pad 0 missing, pad 1 present) also truncates to -1. Fix: scan all ids, track the highest available id, and handle the all-present case (result = `MAX_GAMEPAD_ID - 1`).
 
 - [x] **Ball launch uses held input, not edge-triggered input.** (`src/main.cpp:150`) — `ImpulseBall` reads `inpc.inputs()` (key/button down), so holding SPACE through a reset while `vel == 0` auto-relaunches the ball. Fix: use `inputs_pressed()` for the one-shot `Launch` action.
 
-- [ ] **Gamepad DB path is CWD-relative.** (`src/main.cpp:333`) — `std::ifstream ifs("gamecontrollerdb.txt")` resolves against the working directory; the makefile never copies/installs the DB, so launching from another directory silently skips mappings (file exists at repo root). Fix: resolve the DB path relative to the executable/bundle, or install it alongside the binary.
+- [x] **Gamepad DB path is CWD-relative.** (`src/main.cpp:333`) — `std::ifstream ifs("gamecontrollerdb.txt")` resolves against the working directory; the makefile never copies/installs the DB, so launching from another directory silently skips mappings (file exists at repo root). Fix: resolve the DB path relative to the executable/bundle, or install it alongside the binary.
 
 - [x] **Update runs inside `BeginDrawing`.** (`src/main.cpp:393`) — `systems.run()` is called between `BeginDrawing()` and `EndDrawing()`; `system.h:216` shows `run()` = `tick_all()` + `render_all()`, so game logic executes inside the draw block. Fix: split tick before `BeginDrawing`, and run only render systems inside the draw block.
 
-- [ ] **Resolution fetched once, never re-fetched.** (`vendor/afterhours/src/plugins/window_manager.h:89`) — `CollectCurrentResolution` clears `should_refetch` after the first fetch and nothing ever sets it true again (no resize/fullscreen trigger). Fix: set `should_refetch = true` on resize/fullscreen events and re-fetch then.
+- [x] **Resolution fetched once, never re-fetched.** (`vendor/afterhours/src/plugins/window_manager.h:89`) — `CollectCurrentResolution` clears `should_refetch` after the first fetch and nothing ever sets it true again (no resize/fullscreen trigger). Fix: set `should_refetch = true` on resize/fullscreen events and re-fetch then.
 
 - [x] **HiDPI mismatch: framebuffer pixels vs logical coordinates.** (`vendor/afterhours/src/plugins/window_manager.h:58`) — `fetch_current_resolution()` uses `GetRenderWidth/Height` (framebuffer px), but draw/logic use logical coordinates — on Retina the bounds are 2x, so the ball exits the visible view. Fix: use `GetScreenWidth/Height` (logical size) for game bounds.
 
-- [ ] **Hardcoded spawn geometry ignores the resolution singleton.** (`src/main.cpp:316`) — `make_paddle` uses x = 150/1100 and y = 720/2, `make_ball` uses 1280/2, 720/2, while bounds come from `ProvidesCurrentResolution`; a different window size misplaces spawns. Fix: derive spawn positions from the resolution singleton / named constants.
+- [x] **Hardcoded spawn geometry ignores the resolution singleton.** (`src/main.cpp:316`) — `make_paddle` uses x = 150/1100 and y = 720/2, `make_ball` uses 1280/2, 720/2, while bounds come from `ProvidesCurrentResolution`; a different window size misplaces spawns. Fix: derive spawn positions from the resolution singleton / named constants.
 
 - [x] **Unclamped variable dt enables tunneling.** (`src/main.cpp:394`) — `systems.run(raylib::GetFrameTime())` passes raw frame time; `MoveAndBounce` steps `p += vel * 500 * dt`, so a hitch can teleport the ball through a paddle/wall. Fix: clamp dt (e.g. `<= 1/30` s) or use a fixed timestep.
 
-- [ ] **No `clean` recipe despite `.PHONY: clean`.** (`makefile:42`) — `.PHONY` lists `clean` but no `clean:` target exists, so `make clean` is a no-op and `pong.exe`/outputs are never removed. Fix: add a `clean` recipe deleting `$(OUTPUT_EXE)`, `output/`, and `*.dSYM`.
+- [x] **No `clean` recipe despite `.PHONY: clean`.** (`makefile:42`) — `.PHONY` lists `clean` but no `clean:` target exists, so `make clean` is a no-op and `pong.exe`/outputs are never removed. Fix: add a `clean` recipe deleting `$(OUTPUT_EXE)`, `output/`, and `*.dSYM`.
 
 - [x] **`DEPENDS` uses undefined `SOURCES`.** (`makefile:32`) — `$(patsubst %.cpp,%.d,$(SOURCES))` with `SOURCES` never set yields an empty `DEPENDS`, so `-include` loads nothing; the defined variable is `SRC_FILES`. Fix: use `$(SRC_FILES)` in the `patsubst`.
 
-- [ ] **`all` builds one TU and runs the game.** (`makefile:44`) — `all` compiles only `src/main.cpp` and `&& ./pong.exe`, ignoring `SRC_FILES`/`OBJ_FILES` and blocking CI/headless builds. Fix: split into a `build` target (compile all `SRC_FILES`) and a separate `run` target.
+- [x] **`all` builds one TU and runs the game.** (`makefile:44`) — `all` compiles only `src/main.cpp` and `&& ./pong.exe`, ignoring `SRC_FILES`/`OBJ_FILES` and blocking CI/headless builds. Fix: split into a `build` target (compile all `SRC_FILES`) and a separate `run` target.
 
 - [x] **`brew` runs at parse time on every invocation.** (`makefile:5`) — `export PKG_CONFIG_PATH := $(shell brew --prefix)/...` executes brew for every make invocation (including `clean`/`--help`), and a brew failure leaves a leading `:` (CWD in the search path). Fix: guard brew failure / lazily compute the path only for build targets.
 
-- [ ] **Hardcoded Homebrew/macOS link line.** (`makefile:10`) — `$(shell brew --prefix raylib)/lib/libraylib.a` plus `-framework OpenGL/Cocoa/IOKit/...` breaks Linux/Windows/Intel-brew setups. Fix: use `pkg-config --libs raylib` with conditional macOS-only frameworks.
+- [x] **Hardcoded Homebrew/macOS link line.** (`makefile:10`) — `$(shell brew --prefix raylib)/lib/libraylib.a` plus `-framework OpenGL/Cocoa/IOKit/...` breaks Linux/Windows/Intel-brew setups. Fix: use `pkg-config --libs raylib` with conditional macOS-only frameworks.
 
 - [x] **Dead submodule declaration.** (`.gitmodules:1`) — declares `vendor/afterhours` as a submodule via `git@github.com:gabeochoa/afterhours.git`, yet the files are present as plain tracked files in the tree. Fix: remove the declaration or restore a pinned real submodule.
 
-- [ ] **GLFW include path case mismatch.** (`src/rl.h:26`) — `#include <GLFW/glfw3.h>` needs a `vendor/GLFW/` directory, but the vendored directory is lowercase `vendor/glfw/` (verified by listing); only Homebrew's GLFW satisfies the include. Fix: align the include path / directory case (e.g. `<glfw/glfw3.h>`).
+- [x] **GLFW include path case mismatch.** (`src/rl.h:26`) — `#include <GLFW/glfw3.h>` needs a `vendor/GLFW/` directory, but the vendored directory is lowercase `vendor/glfw/` (verified by listing); only Homebrew's GLFW satisfies the include. Fix: align the include path / directory case (e.g. `<glfw/glfw3.h>`).
 
 - [x] **Vendored raylib headers missing.** (`vendor/RaylibOpOverloads.h:3`) — includes `<raylib.h>`/`<raymath.h>`, but `vendor/` contains no `raylib.h`/`raymath.h` (only `afterhours/`, `backward/`, `fmt/`, `glfw/`, `magic_enum/`, `RaylibOpOverloads.h`), so the build works only via Homebrew pkg-config. Fix: vendor the raylib headers or document the Homebrew requirement.
 
-- [ ] **Y-bounce double-advances after the flip.** (`src/main.cpp:187`) — position is stepped once at line 179, then after `vel.y *= -1` the identical `p += vel * sz * dt` runs twice (lines 187–188) — 3 steps in one frame vs 1 normally, net `p0 - v*step` instead of a mirrored overshoot. Fix: step once after the flip and clamp `p.y` to `[0, H - h]`.
+- [x] **Y-bounce double-advances after the flip.** (`src/main.cpp:187`) — position is stepped once at line 179, then after `vel.y *= -1` the identical `p += vel * sz * dt` runs twice (lines 187–188) — 3 steps in one frame vs 1 normally, net `p0 - v*step` instead of a mirrored overshoot. Fix: step once after the flip and clamp `p.y` to `[0, H - h]`.
 
 ## Medium
 
