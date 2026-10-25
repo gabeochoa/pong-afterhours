@@ -6,7 +6,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 #include "afterhours/src/graphics.h"
-#include "afterhours/src/plugins/e2e_testing/e2e_testing.h"
+#include "afterhours/src/plugins/e2e_testing/app.h"
 #include "afterhours/src/plugins/e2e_testing/perf_commands.h"
 #pragma GCC diagnostic pop
 

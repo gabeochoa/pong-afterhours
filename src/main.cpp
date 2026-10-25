@@ -373,9 +373,8 @@ Entity &make_ball() {
   return entity;
 }
 
-// E2E test wiring (afterhours testing framework). Included here because the
-// pong commands inspect the game types above.
-#include "e2e_integration.h"
+// Pong's e2e commands; included here because they inspect the game types.
+#include "e2e_commands.h"
 
 int main(int argc, char *argv[]) {
   graphics::set_config_flags(graphics::FLAG_WINDOW_RESIZABLE |
@@ -413,11 +412,10 @@ int main(int argc, char *argv[]) {
   // the game starts paused (no tick yet) while render already needs them.
   EntityHelper::merge_entity_arrays();
 
-  // E2E handlers tick in their own manager, every frame even while paused
-  // (see e2e_integration.h).
-  SystemManager e2e_systems;
-  auto e2e = pong_e2e::setup(e2e_systems, argc, argv);
-  if (pong_e2e::requested(argc, argv) && !e2e)
+  auto e2e = testing::E2EApp::create(argc, argv,
+                                     pong_e2e::register_pong_commands,
+                                     "tests/e2e/screenshots");
+  if (testing::should_run_e2e(argc, argv) && !e2e)
     return 1;
 
   SystemManager systems;
@@ -452,13 +450,11 @@ int main(int argc, char *argv[]) {
   }
 
   graphics::RenderTextureType target = load_render_texture(GAME_W, GAME_H);
-  if (e2e)
-    e2e->target = &target;
 
   while (!graphics::window_should_close()) {
     float dt = std::min(graphics::get_frame_time(), 1.f / 30.f);
     if (e2e)
-      pong_e2e::tick(*e2e, dt);
+      e2e->tick(dt);
     // platform_input routes to the injected test input under --e2e and to
     // the real keyboard otherwise, so the same keys drive both.
     if (testing::platform_input::is_key_pressed(raylib::KEY_R)) {
@@ -505,15 +501,15 @@ int main(int argc, char *argv[]) {
         vp.dest, vec2{0, 0}, 0.f, raylib::WHITE);
     graphics::end_drawing();
     if (e2e) {
-      pong_e2e::post_render(*e2e);
-      if (pong_e2e::is_finished(*e2e))
+      e2e->post_render(target);
+      if (e2e->finished())
         break;
     }
   }
 
   int exit_code = 0;
   if (e2e)
-    exit_code = pong_e2e::finish(*e2e);
+    exit_code = e2e->finish();
 
   unload_render_texture(target);
   afterhours::UnloadSound(hit_sound);
