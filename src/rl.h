@@ -23,7 +23,7 @@ namespace raylib {
 
 } // namespace raylib
 
-#include <GLFW/glfw3.h>
+#include <glfw/glfw3.h>
 
 // We redefine the max here because the max keyboardkey is in the 300s
 #undef MAGIC_ENUM_RANGE_MAX
