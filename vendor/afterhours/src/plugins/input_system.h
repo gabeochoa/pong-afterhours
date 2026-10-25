@@ -185,16 +185,19 @@ struct input : developer::Plugin {
     bool has_value() const { return data.has_value(); }
     bool valid() const { return has_value(); }
 
-    [[nodiscard]] std::vector<input::ActionDone<Action>> &inputs() {
-      return data.value().get().inputs;
+    [[nodiscard]] const std::vector<input::ActionDone<Action>> &inputs() {
+      static const std::vector<input::ActionDone<Action>> empty;
+      return data ? data.value().get().inputs : empty;
     }
 
-    [[nodiscard]] std::vector<input::ActionDone<Action>> &inputs_pressed() {
-      return data.value().get().inputs_pressed;
+    [[nodiscard]] const std::vector<input::ActionDone<Action>>
+        &inputs_pressed() {
+      static const std::vector<input::ActionDone<Action>> empty;
+      return data ? data.value().get().inputs_pressed : empty;
     }
 
     [[nodiscard]] float since_last_input() {
-      return data.value().get().since_last_input;
+      return data ? data.value().get().since_last_input : 0.f;
     }
   };
 
