@@ -52,16 +52,20 @@ OUTPUT_EXE := pong.exe
 # (g++-14 is also not installed on this machine.)
 CXX ?= clang++
 
-.PHONY: all build run test e2e clean
+.PHONY: all build run test e2e e2e-window clean
 
 all: build
 
 test: build
 	test -x $(OUTPUT_EXE)
 
-# Runs the afterhours e2e scripts in tests/e2e. Screenshots land in
-# tests/e2e/screenshots (gitignored run artifacts).
+# Runs the e2e scripts headless; screenshots land in tests/e2e/screenshots.
 e2e: build
+	./$(OUTPUT_EXE) --e2e --test-script-dir tests/e2e \
+		--screenshot-dir tests/e2e/screenshots --headless
+
+# Same scripts in a visible window, to watch a run.
+e2e-window: build
 	./$(OUTPUT_EXE) --e2e --test-script-dir tests/e2e \
 		--screenshot-dir tests/e2e/screenshots
 
