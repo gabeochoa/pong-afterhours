@@ -418,6 +418,9 @@ int main(int argc, char *argv[]) {
       graphics::request_quit();
       return;
     }
+    // Seeded so the serve angles, and so the rally scripts, repeat exactly.
+    if (e2e)
+      e2e->set_seed(0xE2E);
 
     window_manager::enforce_singletons(systems);
     input::enforce_singletons(systems);
