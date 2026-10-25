@@ -33,7 +33,6 @@ constexpr ColorType kDarkGray{80, 80, 80, 255};
 constexpr ColorType kYellow{253, 249, 0, 255};
 constexpr ColorType kGreen{0, 228, 48, 255};
 constexpr ColorType kBlack{0, 0, 0, 255};
-constexpr ColorType kWhite{255, 255, 255, 255};
 
 struct GameState : BaseComponent {
   int left = 0;
@@ -376,24 +375,16 @@ Entity &make_ball() {
 
 int main(int argc, char *argv[]) {
   SystemManager systems;
-  std::unique_ptr<testing::E2EApp> e2e;
-  graphics::RenderTextureType target{};
   GameState *state = nullptr;
   Entity *ball = nullptr;
-  int exit_code = 0;
 
   graphics::RunConfig cfg;
-  cfg.width = GAME_W;
-  cfg.height = GAME_H;
+  cfg.width = cfg.canvas_width = GAME_W;
+  cfg.height = cfg.canvas_height = GAME_H;
   cfg.title = "pong-afterhours";
   cfg.target_fps = 200;
   cfg.flags = graphics::FLAG_WINDOW_RESIZABLE | graphics::FLAG_VSYNC_HINT |
               graphics::FLAG_WINDOW_HIGHDPI;
-
-  cfg.display = testing::parse_e2e_args(argc, argv).display_mode();
-  // Under e2e, step a fixed dt so a script plays out the same every run.
-  if (testing::should_run_e2e(argc, argv))
-    cfg.fixed_dt = 1.f / 60.f;
 
   cfg.init = [&] {
     graphics::set_exit_key(0);
@@ -418,17 +409,6 @@ int main(int argc, char *argv[]) {
     // the game starts paused (no tick yet) while render already needs them.
     EntityHelper::merge_entity_arrays();
 
-    e2e = testing::E2EApp::create(argc, argv, pong_e2e::register_pong_commands,
-                                  "tests/e2e/screenshots");
-    if (testing::should_run_e2e(argc, argv) && !e2e) {
-      exit_code = 1;
-      graphics::request_quit();
-      return;
-    }
-    // Seeded so the serve angles, and so the rally scripts, repeat exactly.
-    if (e2e)
-      e2e->set_seed(0xE2E);
-
     window_manager::enforce_singletons(systems);
     input::enforce_singletons(systems);
 
@@ -448,15 +428,11 @@ int main(int argc, char *argv[]) {
     systems.register_render_system(
         std::make_unique<input::RenderConnectedGamepads>());
     systems.register_render_system(std::make_unique<RenderFPS>());
-
-    target = load_render_texture(GAME_W, GAME_H);
   };
 
   cfg.frame = [&] {
     const float dt =
         cfg.step_dt(std::min(graphics::get_frame_time(), 1.f / 30.f));
-    if (e2e)
-      e2e->tick(dt);
     // platform_input reads injected input under --e2e, the keyboard otherwise.
     if (testing::platform_input::is_key_pressed(keys::R)) {
       state->left = state->right = 0;
@@ -472,7 +448,6 @@ int main(int argc, char *argv[]) {
       state->paused = !state->paused;
     if (!state->paused && !state->game_over)
       systems.tick_all(EntityHelper::get_entities_for_mod(), dt);
-    begin_texture_mode(target);
     systems.render_all(dt);
     if (state->paused) {
       // Centred + shadow: measure, then offset by half the width.
@@ -487,34 +462,21 @@ int main(int argc, char *argv[]) {
       else
         draw_menu_text("PAUSED - P to resume");
     }
-    end_texture_mode();
-    graphics::begin_drawing();
-    graphics::clear_background(kBlack);
-    // Letterbox the fixed-size game texture into the resizable window.
-    draw_render_texture(target,
-                        window_manager::content_viewport(
-                            graphics::get_screen_width(),
-                            graphics::get_screen_height())
-                            .dest,
-                        kWhite);
-    graphics::end_drawing();
-    if (e2e) {
-      e2e->post_render(target);
-      if (e2e->finished())
-        graphics::request_quit();
-    }
   };
 
   cfg.cleanup = [&] {
-    if (e2e)
-      exit_code = e2e->finish();
-    unload_render_texture(target);
     afterhours::UnloadSound(hit_sound);
     afterhours::UnloadSound(score_sound);
     afterhours::CloseAudioDevice();
   };
 
+  auto e2e = testing::E2EApp::attach(cfg, argc, argv,
+                                     pong_e2e::register_pong_commands,
+                                     "tests/e2e/screenshots");
+  // Seeded so the serve angles, and so the rally scripts, repeat exactly.
+  if (e2e)
+    e2e->set_seed(0xE2E);
   if (!graphics::run(cfg))
     return 1;
-  return exit_code;
+  return e2e ? e2e->exit_code : 0;
 }
