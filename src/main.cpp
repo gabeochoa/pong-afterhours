@@ -36,13 +36,8 @@ struct GameState : BaseComponent {
   bool paused = true;
 };
 
+// The custom font, or raylib's default font when it fails to load.
 static Font game_font{};
-static bool font_ready = false;
-
-// The custom font when it loaded, else raylib's default font.
-static Font effective_font() {
-  return font_ready ? game_font : get_default_font();
-}
 
 static SoundType hit_sound{};
 static SoundType score_sound{};
@@ -57,13 +52,13 @@ struct RenderScore : System<GameState> {
   virtual void for_each_with(const Entity &, const GameState &state,
                              const float) const override {
     draw_text_centered(
-        effective_font(),
+        game_font,
         (std::to_string(state.left) + " : " + std::to_string(state.right))
             .c_str(),
         GAME_W / 2, 10, 30, raylib::RAYWHITE);
     if (state.game_over) {
       draw_text_centered(
-          effective_font(),
+          game_font,
           ((state.left > state.right ? "P1" : "P2") +
            std::string(" WINS - R to play again"))
               .c_str(),
@@ -78,7 +73,7 @@ struct RenderFPS : System<window_manager::ProvidesCurrentResolution> {
       const window_manager::ProvidesCurrentResolution &, const float) const
       override {
     draw_text_right_aligned(
-        effective_font(),
+        game_font,
         (std::to_string((int)graphics::get_fps()) + " FPS").c_str(),
         GAME_W - 10, 0, 20, raylib::GREEN);
   }
@@ -404,7 +399,8 @@ int main(int argc, char *argv[]) {
   sound_ready = true;
 
   game_font = load_font_from_file(FONT_PATH, 32);
-  font_ready = font_is_usable(game_font);
+  if (!font_is_usable(game_font))
+    game_font = get_default_font();
 
   auto &singletons = EntityHelper::createEntity();
   {
@@ -492,9 +488,8 @@ int main(int argc, char *argv[]) {
       // Centred + shadow: measure, then offset the shadow call by half the
       // width (see draw_text_centered).
       auto draw_menu_text = [](const char *text) {
-        const Font font = effective_font();
-        const float w = measure_text(font, text, 30, 1.f).x;
-        draw_text_with_shadow(font, text, GAME_W / 2.f - w * 0.5f,
+        const float w = measure_text(game_font, text, 30, 1.f).x;
+        draw_text_with_shadow(game_font, text, GAME_W / 2.f - w * 0.5f,
                               GAME_H / 2.f - 20, 30, raylib::RAYWHITE,
                               raylib::BLACK);
       };
