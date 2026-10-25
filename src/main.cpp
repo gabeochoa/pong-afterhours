@@ -383,13 +383,12 @@ int main(int argc, char *argv[]) {
   cfg.flags = graphics::FLAG_WINDOW_RESIZABLE | graphics::FLAG_VSYNC_HINT |
               raylib::FLAG_WINDOW_HIGHDPI;
 
+  cfg.display = testing::parse_e2e_args(argc, argv).display_mode();
+  // Under e2e, step a fixed dt so a script plays out the same every run.
+  if (testing::should_run_e2e(argc, argv))
+    cfg.fixed_dt = 1.f / 60.f;
+
   cfg.init = [&] {
-    if (!graphics::is_window_ready()) {
-      std::cerr << "error: failed to create window\n";
-      exit_code = 1;
-      graphics::request_quit();
-      return;
-    }
     graphics::set_exit_key(raylib::KEY_NULL);
     afterhours::InitAudioDevice();
     hit_sound = synth::beep(330.f, 0.09f);
@@ -444,7 +443,8 @@ int main(int argc, char *argv[]) {
   };
 
   cfg.frame = [&] {
-    float dt = std::min(graphics::get_frame_time(), 1.f / 30.f);
+    const float dt =
+        cfg.step_dt(std::min(graphics::get_frame_time(), 1.f / 30.f));
     if (e2e)
       e2e->tick(dt);
     // platform_input reads injected input under --e2e, the keyboard otherwise.
@@ -504,6 +504,7 @@ int main(int argc, char *argv[]) {
     afterhours::CloseAudioDevice();
   };
 
-  graphics::run(cfg);
+  if (!graphics::run(cfg))
+    return 1;
   return exit_code;
 }
