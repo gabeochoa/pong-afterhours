@@ -1,47 +1,29 @@
-
-
 #include "backward/backward.hpp"
 
 namespace backward {
 backward::SignalHandling sh;
 } // namespace backward
 #include "std_include.h"
-//
 
-#include "rl.h"
-
-#define AFTER_HOURS_INCLUDE_DERIVED_CHILDREN
-#define AFTER_HOURS_ENTITY_HELPER
-#define AFTER_HOURS_ENTITY_QUERY
-#define AFTER_HOURS_SYSTEM
-#include "afterhours/ah.h"
 #define AFTER_HOURS_USE_RAYLIB
-#include "afterhours/src/developer.h"
+#include "afterhours/ah.h"
+#include "afterhours/src/drawing_helpers.h"
+#include "afterhours/src/font_helper.h"
+#include "afterhours/src/graphics.h"
+#include "afterhours/src/plugins/audio_helpers.h"
 #include "afterhours/src/plugins/input_system.h"
 #include "afterhours/src/plugins/window_manager.h"
-#include <cassert>
+#include "afterhours/src/random_engine.h"
 
-//
 using namespace afterhours;
-
-typedef raylib::Vector2 vec2;
-typedef raylib::Vector3 vec3;
-typedef raylib::Vector4 vec4;
-
-namespace myutil {
-
-template <class... Ts> struct overloaded : Ts... {
-  using Ts::operator()...;
-};
-
-template <typename T> int sgn(T val) { return (T(0) < val) - (val < T(0)); }
-} // namespace myutil
 
 constexpr int WIN_SCORE = 5;
 constexpr float BALL_SPEED = 500.f;
 constexpr float PADDLE_SPEED = 450.f;
 constexpr int GAME_W = 1280;
 constexpr int GAME_H = 720;
+constexpr char FONT_PATH[] =
+    "resources/fonts/AtkinsonHyperlegible-Regular.ttf";
 
 struct GameState : BaseComponent {
   int left = 0;
@@ -50,53 +32,72 @@ struct GameState : BaseComponent {
   bool paused = true;
 };
 
-static raylib::Sound hit_sound{};
-static raylib::Sound score_sound{};
-static bool sound_ready = false;
+static Font game_font{};
+static bool font_ready = false;
 
-static raylib::Sound make_beep(float freq) {
-  constexpr int sample_rate = 44100;
-  constexpr int frames = sample_rate / 12;
-  std::vector<short> samples(frames);
-  for (int i = 0; i < frames; i++) {
-    float t = (float)i / (float)sample_rate;
-    samples[i] = sinf(2.f * 3.14159265f * freq * t) > 0 ? 12000 : -12000;
-  }
-  raylib::Wave wave{.frameCount = (unsigned)frames,
-                    .sampleRate = (unsigned)sample_rate,
-                    .sampleSize = 16,
-                    .channels = 1,
-                    .data = samples.data()};
-  return raylib::LoadSoundFromWave(wave);
+static void draw_game_text(const char *text, float x, float y, float size,
+                           Color color) {
+  if (font_ready)
+    draw_text_ex(game_font, text, vec2{x, y}, size, 1.f, color);
+  else
+    draw_text(text, x, y, size, color);
 }
 
-static void play_beep(const raylib::Sound &sound) {
+static SoundType hit_sound{};
+static SoundType score_sound{};
+static bool sound_ready = false;
+
+static SoundType make_beep(float freq, float seconds) {
+  constexpr int sample_rate = 44100;
+  int frames = (int)(sample_rate * seconds);
+  std::vector<short> samples(frames);
+  int attack = sample_rate / 200;
+  int release = sample_rate / 80;
+  for (int i = 0; i < frames; i++) {
+    float t = (float)i / (float)sample_rate;
+    float env = std::min(1.f, (float)i / (float)attack) *
+                std::min(1.f, (float)(frames - i) / (float)release);
+    samples[i] =
+        (short)(sinf(2.f * 3.14159265f * freq * t) * env * 8000.f);
+  }
+  WaveType wave{.frameCount = (unsigned)frames,
+                .sampleRate = (unsigned)sample_rate,
+                .sampleSize = 16,
+                .channels = 1,
+                .data = samples.data()};
+  return afterhours::LoadSoundFromWave(wave);
+}
+
+static void play_beep(const SoundType &sound) {
   if (sound_ready)
-    raylib::PlaySound(sound);
+    afterhours::PlaySound(sound);
 }
 
 struct RenderScore : System<GameState> {
   virtual void for_each_with(const Entity &, const GameState &state,
-                             float) const override {
-    raylib::DrawText(
-        raylib::TextFormat("%d : %d", state.left, state.right),
+                             const float) const override {
+    draw_game_text(
+        (std::to_string(state.left) + " : " + std::to_string(state.right))
+            .c_str(),
         GAME_W / 2 - 30, 10, 30, raylib::RAYWHITE);
     if (state.game_over) {
-      raylib::DrawText(
-          raylib::TextFormat("%s WINS - R to play again",
-                             state.left > state.right ? "P1" : "P2"),
+      draw_game_text(
+          ((state.left > state.right ? "P1" : "P2") +
+           std::string(" WINS - R to play again"))
+              .c_str(),
           GAME_W / 2 - 190, GAME_H / 2 - 40, 30, raylib::RAYWHITE);
     }
   }
 };
 
 struct RenderFPS : System<window_manager::ProvidesCurrentResolution> {
-  virtual ~RenderFPS() {}
   virtual void for_each_with(
       const Entity &,
-      const window_manager::ProvidesCurrentResolution &pCurrentResolution,
-      float) const override {
-    raylib::DrawFPS((int)(pCurrentResolution.width() - 80), 0);
+      const window_manager::ProvidesCurrentResolution &, const float) const
+      override {
+    draw_game_text(
+        (std::to_string((int)graphics::get_fps()) + " FPS").c_str(),
+        GAME_W - 80, 0, 20, raylib::GREEN);
   }
 };
 
@@ -109,11 +110,10 @@ enum class InputAction {
   Launch,
 };
 
-using afterhours::input;
-
 auto get_mapping() {
-  std::map<InputAction, input::ValidInputs> mapping;
-  mapping[InputAction::P1Up] = {
+  std::map<int, input::ValidInputs> mapping;
+  auto key = [](InputAction a) { return static_cast<int>(a); };
+  mapping[key(InputAction::P1Up)] = {
       raylib::KEY_UP,
       input::GamepadAxisWithDir{
           .axis = raylib::GAMEPAD_AXIS_LEFT_Y,
@@ -122,7 +122,7 @@ auto get_mapping() {
       raylib::GAMEPAD_BUTTON_LEFT_FACE_UP,
   };
 
-  mapping[InputAction::P1Down] = {
+  mapping[key(InputAction::P1Down)] = {
       raylib::KEY_DOWN,
       input::GamepadAxisWithDir{
           .axis = raylib::GAMEPAD_AXIS_LEFT_Y,
@@ -131,7 +131,7 @@ auto get_mapping() {
       raylib::GAMEPAD_BUTTON_LEFT_FACE_DOWN,
   };
 
-  mapping[InputAction::P2Up] = {
+  mapping[key(InputAction::P2Up)] = {
       raylib::KEY_W,
       input::GamepadAxisWithDir{
           .axis = raylib::GAMEPAD_AXIS_LEFT_Y,
@@ -140,7 +140,7 @@ auto get_mapping() {
       raylib::GAMEPAD_BUTTON_LEFT_FACE_UP,
   };
 
-  mapping[InputAction::P2Down] = {
+  mapping[key(InputAction::P2Down)] = {
       raylib::KEY_S,
       input::GamepadAxisWithDir{
           .axis = raylib::GAMEPAD_AXIS_LEFT_Y,
@@ -149,7 +149,7 @@ auto get_mapping() {
       raylib::GAMEPAD_BUTTON_LEFT_FACE_DOWN,
   };
 
-  mapping[InputAction::Launch] = {
+  mapping[key(InputAction::Launch)] = {
       raylib::KEY_SPACE,
       raylib::GAMEPAD_BUTTON_RIGHT_FACE_UP,
       raylib::GAMEPAD_BUTTON_RIGHT_FACE_DOWN,
@@ -173,16 +173,10 @@ struct Transform : BaseComponent {
   raylib::Rectangle rect() const {
     return raylib::Rectangle{position.x, position.y, size.x, size.y};
   }
-
 };
 
 struct HasVelocity : BaseComponent {
   vec2 vel{};
-};
-
-struct HasColor : BaseComponent {
-  raylib::Color color;
-  HasColor(raylib::Color c) : color(c) {}
 };
 
 struct PlayerID : BaseComponent {
@@ -191,15 +185,16 @@ struct PlayerID : BaseComponent {
 };
 
 struct ImpulseBall : System<HasVelocity> {
-  input::PossibleInputCollector<InputAction> inpc;
+  input::PossibleInputCollector inpc;
 
-  void once(float) override {
-    inpc = input::get_input_collector<InputAction>();
+  void once(const float) override {
+    inpc = input::get_input_collector();
   }
 
   // Any player may serve: there is no serve ownership in pong, so Launch
   // deliberately ignores the action's player id (unlike ImpulsePaddle).
-  virtual void for_each_with(Entity &entity, HasVelocity &vel, float) override {
+  virtual void for_each_with(Entity &entity, HasVelocity &vel,
+                             const float) override {
     if (entity.has<PlayerID>())
       return;
 
@@ -209,14 +204,15 @@ struct ImpulseBall : System<HasVelocity> {
     bool space = false;
 
     for (auto &actions_done : inpc.inputs_pressed()) {
-      if (actions_done.action == InputAction::Launch)
+      if (actions_done.action == static_cast<int>(InputAction::Launch))
         space = true;
     }
 
     if (space && std::abs(vel.vel.x) < 1e-6f &&
         std::abs(vel.vel.y) < 1e-6f) {
-      float angle = (float)raylib::GetRandomValue(-35, 35) * DEG2RAD;
-      float dir = raylib::GetRandomValue(0, 1) == 0 ? -1.f : 1.f;
+      float angle =
+          (float)RandomEngine::get().get_int(-35, 35) * (3.14159265f / 180.f);
+      float dir = RandomEngine::get().get_bool() ? 1.f : -1.f;
       vel.vel.x = dir * cosf(angle);
       vel.vel.y = sinf(angle);
     }
@@ -225,10 +221,11 @@ struct ImpulseBall : System<HasVelocity> {
 
 struct MoveAndBounce : System<Transform, HasVelocity> {
   virtual void for_each_with(Entity &entity, Transform &transform,
-                             HasVelocity &vel, float dt) override {
+                             HasVelocity &vel, const float dt) override {
     float speed = entity.has<PlayerID>() ? PADDLE_SPEED : BALL_SPEED;
     vec2 p = transform.pos();
-    p += vel.vel * speed * dt;
+    p.x += vel.vel.x * speed * dt;
+    p.y += vel.vel.y * speed * dt;
 
     if (entity.has<PlayerID>()) {
       p.y = std::clamp(p.y, 0.f, (float)GAME_H - transform.size.y);
@@ -247,7 +244,7 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
     if (p.x + transform.size.x < 0 || p.x > GAME_W) {
       auto scored = EntityQuery().whereHasComponent<GameState>().gen_first();
       play_beep(score_sound);
-      if (scored) {
+      if (scored.valid()) {
         GameState &state = scored.asE().get<GameState>();
         if (p.x + transform.size.x < 0)
           state.right++;
@@ -265,14 +262,14 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
 };
 
 struct ImpulsePaddle : System<HasVelocity, PlayerID> {
-  input::PossibleInputCollector<InputAction> inpc;
+  input::PossibleInputCollector inpc;
 
-  void once(float) override {
-    inpc = input::get_input_collector<InputAction>();
+  void once(const float) override {
+    inpc = input::get_input_collector();
   }
 
   virtual void for_each_with(Entity &, HasVelocity &vel, PlayerID &playerID,
-                             float) override {
+                             const float) override {
 
     if (!inpc.has_value()) {
       vel.vel.y = 0.f;
@@ -282,14 +279,19 @@ struct ImpulsePaddle : System<HasVelocity, PlayerID> {
     bool up = false;
     bool down = false;
 
-    InputAction up_action =
-        playerID.id == 0 ? InputAction::P1Up : InputAction::P2Up;
-    InputAction down_action =
-        playerID.id == 0 ? InputAction::P1Down : InputAction::P2Down;
+    int up_action = static_cast<int>(playerID.id == 0 ? InputAction::P1Up
+                                                      : InputAction::P2Up);
+    int down_action = static_cast<int>(playerID.id == 0
+                                           ? InputAction::P1Down
+                                           : InputAction::P2Down);
 
     for (auto &actions_done : inpc.inputs()) {
-      // Keyboard actions are tagged id -1; gamepad actions carry the pad id.
-      if (actions_done.id != playerID.id && actions_done.id != -1)
+      // Keyboard actions arrive once per gamepad id (id 0 with no pads), so
+      // the paddle accepts any keyboard input for its own action; gamepad
+      // input must match its pad id. Per-player actions keep the shared
+      // keyboard input from cross-talking.
+      if (actions_done.id != playerID.id &&
+          actions_done.medium != input::DeviceMedium::Keyboard)
         continue;
       if (actions_done.action == up_action)
         up = true;
@@ -308,16 +310,15 @@ struct ImpulsePaddle : System<HasVelocity, PlayerID> {
   }
 };
 
-
 struct Collide : System<Transform, HasVelocity> {
   RefEntities colliders;
 
-  void once(float) override {
+  void once(const float) override {
     colliders = EntityQuery().whereHasComponent<Transform>().gen();
   }
 
   virtual void for_each_with(Entity &entity, Transform &transform,
-                             HasVelocity &hasVel, float) override {
+                             HasVelocity &hasVel, const float) override {
     if (entity.has<PlayerID>())
       return;
 
@@ -377,10 +378,10 @@ struct Collide : System<Transform, HasVelocity> {
 };
 
 struct RenderEntities : System<Transform, HasColor> {
-
   virtual void for_each_with(const Entity &, const Transform &transform,
-                             const HasColor &color, float) const override {
-    raylib::DrawRectangleRec(transform.rect(), color.color);
+                             const HasColor &color,
+                             const float) const override {
+    draw_rectangle(transform.rect(), color.color());
   }
 };
 
@@ -407,66 +408,54 @@ Entity &make_ball() {
   return entity;
 }
 
-static bool load_gamepad_mappings() {
-  std::string db_path =
-      std::string(raylib::GetApplicationDirectory()) + "gamecontrollerdb.txt";
-  std::ifstream ifs(db_path);
-  if (!ifs.is_open())
-    return false;
-  std::stringstream buffer;
-  buffer << ifs.rdbuf();
-  input::set_gamepad_mappings(buffer.str().c_str());
-  return true;
-}
-
 int main(void) {
-  raylib::SetConfigFlags(raylib::FLAG_WINDOW_RESIZABLE |
-                          raylib::FLAG_VSYNC_HINT |
-                          raylib::FLAG_WINDOW_HIGHDPI);
-  raylib::SetExitKey(raylib::KEY_NULL);
-  raylib::InitWindow(GAME_W, GAME_H, "pong-afterhours");
-  if (!raylib::IsWindowReady()) {
+  graphics::set_config_flags(graphics::FLAG_WINDOW_RESIZABLE |
+                             graphics::FLAG_VSYNC_HINT |
+                             raylib::FLAG_WINDOW_HIGHDPI);
+  graphics::set_exit_key(raylib::KEY_NULL);
+  graphics::init_window(GAME_W, GAME_H, "pong-afterhours");
+  if (!graphics::is_window_ready()) {
     std::cerr << "error: failed to create window\n";
     return 1;
   }
-  raylib::InitAudioDevice();
-  if (raylib::IsAudioDeviceReady()) {
-    hit_sound = make_beep(440.f);
-    score_sound = make_beep(880.f);
-    sound_ready = true;
-  }
+  afterhours::InitAudioDevice();
+  hit_sound = make_beep(330.f, 0.09f);
+  score_sound = make_beep(660.f, 0.16f);
+  sound_ready = true;
 
-  if (!load_gamepad_mappings())
-    std::cerr << "warning: gamecontrollerdb.txt not found, "
-                 "continuing with default gamepad mappings\n";
+  game_font = load_font_from_file(FONT_PATH, 32);
+  font_ready = font_is_usable(game_font);
 
-  // sophie
   auto &singletons = EntityHelper::createEntity();
   {
-    input::add_singleton_components<InputAction>(singletons, get_mapping());
+    input::add_singleton_components(singletons, get_mapping());
     window_manager::add_singleton_components(singletons, 200);
     singletons.addComponent<GameState>();
   }
   GameState &state = singletons.get<GameState>();
-  raylib::SetTargetFPS(
+  graphics::set_target_fps(
       singletons.get<window_manager::ProvidesTargetFPS>().fps);
 
   make_paddle(0);
   make_paddle(1);
   Entity &ball = make_ball();
 
+  // Entities are created in a temp array; tick() normally merges them, but
+  // the game starts paused (no tick yet) while render already needs them.
+  EntityHelper::merge_entity_arrays();
+
   SystemManager systems;
 
   // debug systems
   {
     window_manager::enforce_singletons(systems);
-    input::enforce_singletons<InputAction>(systems);
+    input::enforce_singletons(systems);
   }
 
   // External plugins first: systems run in registration order, and the
   // gameplay systems below read this frame's input collector.
   {
-    input::register_update_systems<InputAction>(systems);
+    input::register_update_systems(systems);
     window_manager::register_update_systems(systems);
   }
 
@@ -478,7 +467,7 @@ int main(void) {
   // renders
   {
     systems.register_render_system(
-        [&]() { raylib::ClearBackground(raylib::DARKGRAY); });
+        [](float) { graphics::clear_background(raylib::DARKGRAY); });
     systems.register_render_system(std::make_unique<RenderScore>());
     systems.register_render_system(std::make_unique<RenderEntities>());
     systems.register_render_system(
@@ -486,11 +475,10 @@ int main(void) {
     systems.register_render_system(std::make_unique<RenderFPS>());
   }
 
-  raylib::RenderTexture2D target =
-      raylib::LoadRenderTexture(GAME_W, GAME_H);
+  graphics::RenderTextureType target = load_render_texture(GAME_W, GAME_H);
 
-  while (!raylib::WindowShouldClose()) {
-    if (raylib::IsKeyPressed(raylib::KEY_R)) {
+  while (!graphics::window_should_close()) {
+    if (graphics::is_key_pressed(raylib::KEY_R)) {
       state.left = state.right = 0;
       state.game_over = false;
       state.paused = false;
@@ -498,48 +486,47 @@ int main(void) {
           vec2{(float)GAME_W / 2.f, (float)GAME_H / 2.f});
       ball.get<HasVelocity>().vel = {0, 0};
     }
-    if ((raylib::IsKeyPressed(raylib::KEY_P) ||
-         raylib::IsKeyPressed(raylib::KEY_ESCAPE)) &&
+    if ((graphics::is_key_pressed(raylib::KEY_P) ||
+         graphics::is_key_pressed(raylib::KEY_ESCAPE)) &&
         !state.game_over)
       state.paused = !state.paused;
-    float dt = std::min(raylib::GetFrameTime(), 1.f / 30.f);
+    float dt = std::min(graphics::get_frame_time(), 1.f / 30.f);
     if (!state.paused && !state.game_over)
-      systems.tick_all(dt);
-    raylib::BeginTextureMode(target);
+      systems.tick_all(EntityHelper::get_entities_for_mod(), dt);
+    begin_texture_mode(target);
     systems.render_all(dt);
     if (state.paused) {
       if (state.left == 0 && state.right == 0)
-        raylib::DrawText("PONG - P to play", GAME_W / 2 - 140,
-                         GAME_H / 2 - 20, 30, raylib::RAYWHITE);
+        draw_game_text("PONG - P to play", GAME_W / 2 - 140,
+                       GAME_H / 2 - 20, 30, raylib::RAYWHITE);
       else
-        raylib::DrawText("PAUSED - P to resume", GAME_W / 2 - 180,
-                         GAME_H / 2 - 20, 30, raylib::RAYWHITE);
+        draw_game_text("PAUSED - P to resume", GAME_W / 2 - 180,
+                       GAME_H / 2 - 20, 30, raylib::RAYWHITE);
     }
-    raylib::EndTextureMode();
-    raylib::BeginDrawing();
-    raylib::ClearBackground(raylib::BLACK);
+    end_texture_mode();
+    graphics::begin_drawing();
+    graphics::clear_background(raylib::BLACK);
     float scale =
-        std::min((float)raylib::GetScreenWidth() / (float)GAME_W,
-                 (float)raylib::GetScreenHeight() / (float)GAME_H);
+        std::min((float)graphics::get_screen_width() / (float)GAME_W,
+                 (float)graphics::get_screen_height() / (float)GAME_H);
     float dw = (float)GAME_W * scale;
     float dh = (float)GAME_H * scale;
-    raylib::DrawTexturePro(
+    draw_texture_pro(
         target.texture,
         raylib::Rectangle{0.f, 0.f, (float)GAME_W, -(float)GAME_H},
-        raylib::Rectangle{((float)raylib::GetScreenWidth() - dw) / 2.f,
-                          ((float)raylib::GetScreenHeight() - dh) / 2.f, dw,
-                          dh},
+        raylib::Rectangle{((float)graphics::get_screen_width() - dw) / 2.f,
+                          ((float)graphics::get_screen_height() - dh) / 2.f,
+                          dw, dh},
         vec2{0, 0}, 0.f, raylib::WHITE);
-    raylib::EndDrawing();
+    graphics::end_drawing();
   }
 
-  raylib::UnloadRenderTexture(target);
+  unload_render_texture(target);
   if (sound_ready) {
-    raylib::UnloadSound(hit_sound);
-    raylib::UnloadSound(score_sound);
+    afterhours::UnloadSound(hit_sound);
+    afterhours::UnloadSound(score_sound);
   }
-  raylib::CloseAudioDevice();
-  raylib::CloseWindow();
-
+  afterhours::CloseAudioDevice();
+  graphics::close_window();
   return 0;
 }

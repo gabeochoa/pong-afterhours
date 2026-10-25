@@ -4,7 +4,9 @@ Minimal Pong showing how to use the [afterhours](https://github.com/gabeochoa/af
 
 ## Build
 
-Requires Homebrew's raylib — the vendored tree has no `raylib.h`/`raymath.h`, so the build finds them via pkg-config:
+Afterhours is a git submodule — clone with `--recurse-submodules`, or run `git submodule update --init` after cloning.
+
+Requires Homebrew's raylib — the build finds `raylib.h`/`raymath.h` via pkg-config:
 
 ```sh
 brew install raylib pkg-config
@@ -12,6 +14,8 @@ make build   # builds pong.exe without launching it
 make run     # builds and plays it
 make clean
 ```
+
+The menu/score text uses [Atkinson Hyperlegible](https://brailleinstitute.org/freefont) ([resources/fonts/Atkinson-OFL.txt](/Users/gabeochoa/p/pong-afterhours/resources/fonts/Atkinson-OFL.txt)), SIL OFL 1.1. Gamepad mappings live in [resources/gamecontrollerdb.txt](/Users/gabeochoa/p/pong-afterhours/resources/gamecontrollerdb.txt), loaded by afterhours' input plugin.
 
 ## Controls
 

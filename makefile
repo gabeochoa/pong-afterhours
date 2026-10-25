@@ -28,7 +28,8 @@ FLAGS = -std=c++23 -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow \
 
 NOFLAGS = -Wno-deprecated-volatile -Wno-missing-field-initializers \
 		  -Wno-c99-extensions -Wno-unused-function -Wno-sign-conversion \
-		  -Wno-implicit-int-float-conversion -Werror
+		  -Wno-implicit-int-float-conversion \
+		  -Wno-float-conversion -Werror
 INCLUDES = -Ivendor/ -Isrc/
 LIBS = -L. -Lvendor/ $(RAYLIB_LIB)
 
