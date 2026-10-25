@@ -15,8 +15,7 @@ using namespace afterhours;
 using namespace afterhours::testing;
 
 static GameState *find_state() {
-  auto state = EntityQuery().whereHasComponent<GameState>().gen_first();
-  return state.valid() ? &state.asE().get<GameState>() : nullptr;
+  return EntityHelper::get_singleton_cmp<GameState>();
 }
 
 static Entity *find_ball() {

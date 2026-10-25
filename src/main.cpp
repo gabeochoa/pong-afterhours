@@ -221,17 +221,13 @@ struct MoveBall : System<Transform, HasVelocity, Ball> {
     }
 
     if (p.x + transform.size.x < 0 || p.x > GAME_W) {
-      auto scored = EntityQuery().whereHasComponent<GameState>().gen_first();
       afterhours::PlaySound(score_sound);
-      if (scored.valid()) {
-        GameState &state = scored.asE().get<GameState>();
-        if (p.x + transform.size.x < 0)
-          state.right++;
-        else
-          state.left++;
-        state.game_over =
-            state.left >= WIN_SCORE || state.right >= WIN_SCORE;
-      }
+      GameState &state = *EntityHelper::get_singleton_cmp<GameState>();
+      if (p.x + transform.size.x < 0)
+        state.right++;
+      else
+        state.left++;
+      state.game_over = state.left >= WIN_SCORE || state.right >= WIN_SCORE;
       p = Vector2Type{GAME_W / 2.f, GAME_H / 2.f};
       vel.vel = {0, 0};
     }
@@ -401,6 +397,7 @@ int main(int argc, char *argv[]) {
     input::add_singleton_components(singletons, get_mapping());
     window_manager::add_singleton_components(singletons, cfg.target_fps);
     state = &singletons.addComponent<GameState>();
+    EntityHelper::registerSingleton<GameState>(singletons);
 
     make_paddle(0);
     make_paddle(1);
