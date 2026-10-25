@@ -49,7 +49,7 @@ struct EntityQuery {
     explicit Limit(int amt) : amount(amt), amount_taken(0) {}
 
     bool operator()(const Entity &) const override {
-      if (amount_taken > amount)
+      if (amount_taken >= amount)
         return false;
       amount_taken++;
       return true;
