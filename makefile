@@ -2,7 +2,10 @@
 # Ensure Homebrew's pkgconfig is found (non-interactive shells don't source .bashrc,
 # and MacPorts pkg-config is first in PATH). Brew prefix via `brew --prefix`
 # (here /opt/homebrew, not ~/homebrew).
-export PKG_CONFIG_PATH := $(shell brew --prefix)/lib/pkgconfig:$(PKG_CONFIG_PATH)
+BREW_PREFIX := $(shell brew --prefix 2>/dev/null)
+ifneq ($(BREW_PREFIX),)
+export PKG_CONFIG_PATH := $(BREW_PREFIX)/lib/pkgconfig:$(PKG_CONFIG_PATH)
+endif
 
 RAYLIB_FLAGS := `pkg-config --cflags raylib`
 # Link the STATIC raylib archive: the Homebrew dylib does not re-export glfw
