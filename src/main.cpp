@@ -392,7 +392,9 @@ Entity &make_ball() {
 }
 
 static void load_gamepad_mappings() {
-  std::ifstream ifs("gamecontrollerdb.txt");
+  std::string db_path =
+      std::string(raylib::GetApplicationDirectory()) + "gamecontrollerdb.txt";
+  std::ifstream ifs(db_path);
   if (!ifs.is_open()) {
     std::cout << "Failed to load game controller db" << std::endl;
     return;

@@ -56,7 +56,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **Hardcoded Homebrew/macOS link line.** (`makefile:10`) — `$(shell brew --prefix raylib)/lib/libraylib.a` plus `-framework OpenGL/Cocoa/IOKit/...` breaks Linux/Windows/Intel-brew setups. Fix: use `pkg-config --libs raylib` with conditional macOS-only frameworks.
 
-- [ ] **Dead submodule declaration.** (`.gitmodules:1`) — declares `vendor/afterhours` as a submodule via `git@github.com:gabeochoa/afterhours.git`, yet the files are present as plain tracked files in the tree. Fix: remove the declaration or restore a pinned real submodule.
+- [x] **Dead submodule declaration.** (`.gitmodules:1`) — declares `vendor/afterhours` as a submodule via `git@github.com:gabeochoa/afterhours.git`, yet the files are present as plain tracked files in the tree. Fix: remove the declaration or restore a pinned real submodule.
 
 - [ ] **GLFW include path case mismatch.** (`src/rl.h:26`) — `#include <GLFW/glfw3.h>` needs a `vendor/GLFW/` directory, but the vendored directory is lowercase `vendor/glfw/` (verified by listing); only Homebrew's GLFW satisfies the include. Fix: align the include path / directory case (e.g. `<glfw/glfw3.h>`).
 
