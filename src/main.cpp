@@ -294,15 +294,9 @@ struct Collide : System<Transform, HasVelocity> {
     if (entity.has<PlayerID>())
       return;
 
-    raylib::Rectangle swept = transform.rect();
-    swept.x = std::min(transform.pos().x, transform.prev.x);
-    swept.y = std::min(transform.pos().y, transform.prev.y);
-    swept.width = std::max(transform.pos().x + transform.size.x,
-                           transform.prev.x + transform.size.x) -
-                  swept.x;
-    swept.height = std::max(transform.pos().y + transform.size.y,
-                            transform.prev.y + transform.size.y) -
-                   swept.y;
+    const auto swept = rect::bounds(
+        transform.rect(), raylib::Rectangle{transform.prev.x, transform.prev.y,
+                                            transform.size.x, transform.size.y});
 
     for (auto &ref : colliders) {
       Entity &other_e = ref.get();
