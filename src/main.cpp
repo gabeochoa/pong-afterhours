@@ -402,6 +402,7 @@ int main(void) {
   raylib::SetConfigFlags(raylib::FLAG_WINDOW_RESIZABLE |
                           raylib::FLAG_VSYNC_HINT |
                           raylib::FLAG_WINDOW_HIGHDPI);
+  raylib::SetExitKey(raylib::KEY_NULL);
   raylib::InitWindow(GAME_W, GAME_H, "pong-afterhours");
   if (!raylib::IsWindowReady()) {
     std::cerr << "error: failed to create window\n";
@@ -470,7 +471,9 @@ int main(void) {
           vec2{(float)GAME_W / 2.f, (float)GAME_H / 2.f});
       ball.get<HasVelocity>().vel = {0, 0};
     }
-    if (raylib::IsKeyPressed(raylib::KEY_P) && !state.game_over)
+    if ((raylib::IsKeyPressed(raylib::KEY_P) ||
+         raylib::IsKeyPressed(raylib::KEY_ESCAPE)) &&
+        !state.game_over)
       state.paused = !state.paused;
     float dt = std::min(raylib::GetFrameTime(), 1.f / 30.f);
     if (!state.paused && !state.game_over)

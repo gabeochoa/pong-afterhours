@@ -132,7 +132,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **Wrong window title.** (`src/main.cpp:347`) — `InitWindow` title is `'wm-afterhours'`, a window-manager leftover for a pong game. Fix: rename to `'pong-afterhours'`.
 
-- [ ] **ESC quits instantly.** (`src/main.cpp:392`) — no `SetExitKey`; raylib's default ESC sets `WindowShouldClose`, with no pause/confirm. Fix: `SetExitKey(KEY_NULL)` and handle ESC as pause.
+- [x] **ESC quits instantly.** (`src/main.cpp:392`) — no `SetExitKey`; raylib's default ESC sets `WindowShouldClose`, with no pause/confirm. Fix: `SetExitKey(KEY_NULL)` and handle ESC as pause.
 
 - [x] **`Transform::update` takes a non-const reference.** (`src/main.cpp:100`) — `void update(vec2 &v)` never modifies `v`, blocking rvalue/temporary arguments. Fix: `const vec2 &v`.
 

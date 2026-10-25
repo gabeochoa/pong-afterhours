@@ -19,6 +19,6 @@ make clean
 |---|---|---|
 | Paddle | Up/Down arrows or gamepad 1 | W/S or gamepad 2 |
 | Serve | Space (either player) | |
-| Pause | P | |
+| Pause | P or Esc | |
 | Restart | R | |
 
