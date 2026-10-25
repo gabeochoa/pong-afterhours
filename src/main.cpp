@@ -156,7 +156,7 @@ struct Transform : BaseComponent {
 };
 
 struct HasVelocity : BaseComponent {
-  vec2 vel;
+  vec2 vel{};
 };
 
 struct HasColor : BaseComponent {

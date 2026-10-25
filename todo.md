@@ -102,7 +102,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **`EQ::whereInRange`/`orderByDist` dead and unsafe.** (`src/main.cpp:255`) — never called, and both call `entity.get<Transform>()` with no `has<Transform>` guard (`.at` throws on a missing component). Fix: delete them, or guard with `has<Transform>()`.
 
-- [ ] **`HasVelocity.vel` lacks an initializer.** (`src/main.cpp:114`) — `vec2 vel;` has no ctor/init; zeroing relies only on `make_unique` value-init, while direct/stack construction leaves it indeterminate. Fix: `vec2 vel{};`.
+- [x] **`HasVelocity.vel` lacks an initializer.** (`src/main.cpp:114`) — `vec2 vel;` has no ctor/init; zeroing relies only on `make_unique` value-init, while direct/stack construction leaves it indeterminate. Fix: `vec2 vel{};`.
 
 - [ ] **`Limit` off-by-one allows n+1.** (`vendor/afterhours/src/entity_query.h:50`) — `if (amount_taken > amount) return false; amount_taken++;` passes 2 results for `take(1)`. Fix: use `>=`.
 
