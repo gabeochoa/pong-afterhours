@@ -8,9 +8,14 @@ export PKG_CONFIG_PATH := $(BREW_PREFIX)/lib/pkgconfig:$(PKG_CONFIG_PATH)
 endif
 
 RAYLIB_FLAGS := `pkg-config --cflags raylib`
-# Link the STATIC raylib archive: the Homebrew dylib does not re-export glfw
-# symbols that afterhours's window_manager calls directly (glfwGetVideoModes, etc.)
-RAYLIB_LIB := $(shell brew --prefix raylib)/lib/libraylib.a -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo -framework CoreFoundation -framework CoreGraphics
+# macOS links the STATIC raylib archive: the Homebrew dylib does not re-export
+# the glfw symbols that afterhours's window_manager calls directly
+# (glfwGetVideoModes, etc.). Other platforms use pkg-config.
+ifeq ($(shell uname),Darwin)
+RAYLIB_LIB := $(BREW_PREFIX)/opt/raylib/lib/libraylib.a -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo -framework CoreFoundation -framework CoreGraphics
+else
+RAYLIB_LIB := `pkg-config --libs raylib`
+endif
 
 # afterhours headless_gl_macos.h sets GL_SILENCE_DEPRECATION after GLFW already
 # pulled in gl.h; define it (empty, to match) and the multi-header opt-out up front.

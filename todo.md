@@ -98,7 +98,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **`Collide` is O(n^2) per frame.** (`src/main.cpp:294`) — a full `EQ().gen()` scan runs inside `for_each_with` for every `Transform + HasVelocity` entity. Fix: collect colliders once in `once()` (or once per tick) and reuse them.
 
-- [ ] **Input collector re-queried per paddle per frame.** (`src/main.cpp:206`) — `get_input_collector()` runs a full `EntityQuery` scan inside each `for_each_with` call. Fix: fetch the collector once per tick and pass/cache it.
+- [x] **Input collector re-queried per paddle per frame.** (`src/main.cpp:206`) — `get_input_collector()` runs a full `EntityQuery` scan inside each `for_each_with` call. Fix: fetch the collector once per tick and pass/cache it.
 
 - [ ] **`EQ::whereInRange`/`orderByDist` dead and unsafe.** (`src/main.cpp:255`) — never called, and both call `entity.get<Transform>()` with no `has<Transform>` guard (`.at` throws on a missing component). Fix: delete them, or guard with `has<Transform>()`.
 
