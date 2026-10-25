@@ -50,6 +50,31 @@ struct GameState : BaseComponent {
   bool paused = true;
 };
 
+static raylib::Sound hit_sound{};
+static raylib::Sound score_sound{};
+static bool sound_ready = false;
+
+static raylib::Sound make_beep(float freq) {
+  constexpr int sample_rate = 44100;
+  constexpr int frames = sample_rate / 12;
+  std::vector<short> samples(frames);
+  for (int i = 0; i < frames; i++) {
+    float t = (float)i / (float)sample_rate;
+    samples[i] = sinf(2.f * 3.14159265f * freq * t) > 0 ? 12000 : -12000;
+  }
+  raylib::Wave wave{.frameCount = (unsigned)frames,
+                    .sampleRate = (unsigned)sample_rate,
+                    .sampleSize = 16,
+                    .channels = 1,
+                    .data = samples.data()};
+  return raylib::LoadSoundFromWave(wave);
+}
+
+static void play_beep(const raylib::Sound &sound) {
+  if (sound_ready)
+    raylib::PlaySound(sound);
+}
+
 struct RenderScore : System<GameState> {
   virtual void for_each_with(const Entity &, const GameState &state,
                              float) const override {
@@ -221,6 +246,7 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
 
     if (p.x + transform.size.x < 0 || p.x > GAME_W) {
       auto scored = EntityQuery().whereHasComponent<GameState>().gen_first();
+      play_beep(score_sound);
       if (scored) {
         GameState &state = scored.asE().get<GameState>();
         if (p.x + transform.size.x < 0)
@@ -344,6 +370,7 @@ struct Collide : System<Transform, HasVelocity> {
       p.x = hasVel.vel.x > 0 ? other.pos().x + other.size.x
                              : other.pos().x - transform.size.x;
       transform.update(p);
+      play_beep(hit_sound);
       break;
     }
   }
@@ -401,6 +428,12 @@ int main(void) {
   if (!raylib::IsWindowReady()) {
     std::cerr << "error: failed to create window\n";
     return 1;
+  }
+  raylib::InitAudioDevice();
+  if (raylib::IsAudioDeviceReady()) {
+    hit_sound = make_beep(440.f);
+    score_sound = make_beep(880.f);
+    sound_ready = true;
   }
 
   if (!load_gamepad_mappings())
@@ -501,6 +534,11 @@ int main(void) {
   }
 
   raylib::UnloadRenderTexture(target);
+  if (sound_ready) {
+    raylib::UnloadSound(hit_sound);
+    raylib::UnloadSound(score_sound);
+  }
+  raylib::CloseAudioDevice();
   raylib::CloseWindow();
 
   return 0;

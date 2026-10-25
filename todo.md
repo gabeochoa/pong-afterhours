@@ -150,4 +150,4 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **No gamepad-connection feedback.** (`src/main.cpp:387`) — the `RenderConnectedGamepads` render system is commented out, so players cannot tell whether a second pad is connected. Fix: re-enable it or show connection status another way.
 
-- [ ] **No sound or audio init.** (`src/main.cpp:343`) — no `InitAudioDevice`/`PlaySound` anywhere, so hits and scores are silent. Fix: add audio feedback for hits and scores.
+- [x] **No sound or audio init.** (`src/main.cpp:343`) — no `InitAudioDevice`/`PlaySound` anywhere, so hits and scores are silent. Fix: add audio feedback for hits and scores.
