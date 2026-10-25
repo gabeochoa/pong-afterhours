@@ -78,62 +78,23 @@ struct RenderFPS : System<window_manager::ProvidesCurrentResolution> {
   }
 };
 
-enum class InputAction {
-  None,
-  P1Up,
-  P1Down,
-  P2Up,
-  P2Down,
-  Launch,
-};
+enum class InputAction { P1Up, P1Down, P2Up, P2Down, Launch };
 
-auto get_mapping() {
-  std::map<int, input::ValidInputs> mapping;
-  auto key = [](InputAction a) { return static_cast<int>(a); };
-  mapping[key(InputAction::P1Up)] = {
-      keys::UP,
-      input::GamepadAxisWithDir{
-          .axis = input::gamepad::AXIS_LEFT_Y,
-          .dir = -1,
-      },
-      input::gamepad::LEFT_FACE_UP,
+std::map<int, input::ValidInputs> get_mapping() {
+  using pad = input::gamepad;
+  const auto stick = [](int dir) {
+    return input::GamepadAxisWithDir{.axis = pad::AXIS_LEFT_Y, .dir = dir};
   };
-
-  mapping[key(InputAction::P1Down)] = {
-      keys::DOWN,
-      input::GamepadAxisWithDir{
-          .axis = input::gamepad::AXIS_LEFT_Y,
-          .dir = 1,
-      },
-      input::gamepad::LEFT_FACE_DOWN,
+  const auto id = [](InputAction a) { return static_cast<int>(a); };
+  return {
+      {id(InputAction::P1Up), {keys::UP, stick(-1), pad::LEFT_FACE_UP}},
+      {id(InputAction::P1Down), {keys::DOWN, stick(1), pad::LEFT_FACE_DOWN}},
+      {id(InputAction::P2Up), {keys::W, stick(-1), pad::LEFT_FACE_UP}},
+      {id(InputAction::P2Down), {keys::S, stick(1), pad::LEFT_FACE_DOWN}},
+      {id(InputAction::Launch),
+       {keys::SPACE, pad::RIGHT_FACE_UP, pad::RIGHT_FACE_DOWN,
+        pad::RIGHT_FACE_LEFT, pad::RIGHT_FACE_RIGHT}},
   };
-
-  mapping[key(InputAction::P2Up)] = {
-      keys::W,
-      input::GamepadAxisWithDir{
-          .axis = input::gamepad::AXIS_LEFT_Y,
-          .dir = -1,
-      },
-      input::gamepad::LEFT_FACE_UP,
-  };
-
-  mapping[key(InputAction::P2Down)] = {
-      keys::S,
-      input::GamepadAxisWithDir{
-          .axis = input::gamepad::AXIS_LEFT_Y,
-          .dir = 1,
-      },
-      input::gamepad::LEFT_FACE_DOWN,
-  };
-
-  mapping[key(InputAction::Launch)] = {
-      keys::SPACE,
-      input::gamepad::RIGHT_FACE_UP,
-      input::gamepad::RIGHT_FACE_DOWN,
-      input::gamepad::RIGHT_FACE_LEFT,
-      input::gamepad::RIGHT_FACE_RIGHT,
-  };
-  return mapping;
 }
 
 struct Transform : BaseComponent {
