@@ -374,11 +374,11 @@ struct Collide : System<Transform, HasVelocity> {
   }
 };
 
-struct RenderEntities : System<Transform> {
+struct RenderEntities : System<Transform, HasColor> {
 
   virtual void for_each_with(const Entity &, const Transform &transform,
-                             float) const override {
-    raylib::DrawRectangleRec(transform.rect(), raylib::RAYWHITE);
+                             const HasColor &color, float) const override {
+    raylib::DrawRectangleRec(transform.rect(), color.color);
   }
 };
 
@@ -391,6 +391,7 @@ void make_paddle(input::GamepadID id) {
   entity.addComponent<PlayerID>(id);
   entity.addComponent<Transform>(position, vec2{30.f, 150.f});
   entity.addComponent<HasVelocity>();
+  entity.addComponent<HasColor>(raylib::RAYWHITE);
 }
 
 Entity &make_ball() {
@@ -400,6 +401,7 @@ Entity &make_ball() {
 
   entity.addComponent<Transform>(position, vec2{30.f, 30.f});
   entity.addComponent<HasVelocity>();
+  entity.addComponent<HasColor>(raylib::YELLOW);
   return entity;
 }
 
