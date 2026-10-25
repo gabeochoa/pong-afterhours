@@ -48,7 +48,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **No `clean` recipe despite `.PHONY: clean`.** (`makefile:42`) — `.PHONY` lists `clean` but no `clean:` target exists, so `make clean` is a no-op and `pong.exe`/outputs are never removed. Fix: add a `clean` recipe deleting `$(OUTPUT_EXE)`, `output/`, and `*.dSYM`.
 
-- [ ] **`DEPENDS` uses undefined `SOURCES`.** (`makefile:32`) — `$(patsubst %.cpp,%.d,$(SOURCES))` with `SOURCES` never set yields an empty `DEPENDS`, so `-include` loads nothing; the defined variable is `SRC_FILES`. Fix: use `$(SRC_FILES)` in the `patsubst`.
+- [x] **`DEPENDS` uses undefined `SOURCES`.** (`makefile:32`) — `$(patsubst %.cpp,%.d,$(SOURCES))` with `SOURCES` never set yields an empty `DEPENDS`, so `-include` loads nothing; the defined variable is `SRC_FILES`. Fix: use `$(SRC_FILES)` in the `patsubst`.
 
 - [ ] **`all` builds one TU and runs the game.** (`makefile:44`) — `all` compiles only `src/main.cpp` and `&& ./pong.exe`, ignoring `SRC_FILES`/`OBJ_FILES` and blocking CI/headless builds. Fix: split into a `build` target (compile all `SRC_FILES`) and a separate `run` target.
 

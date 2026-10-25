@@ -217,14 +217,9 @@ struct input : developer::Plugin {
 
     int fetch_max_gampad_id() {
       int result = -1;
-      int i = 0;
-      while (i < ::afterhours::input::MAX_GAMEPAD_ID) {
-        bool avail = is_gamepad_available(i);
-        if (!avail) {
-          result = i - 1;
-          break;
-        }
-        i++;
+      for (int i = 0; i < ::afterhours::input::MAX_GAMEPAD_ID; i++) {
+        if (is_gamepad_available(i))
+          result = i;
       }
       return result;
     }
