@@ -26,9 +26,13 @@ leave the example with nothing to teach.
 - **`PendingE2ECommand::expect(ok, mismatch)`**: consumes, or retries with the mismatch.
 - **`rect::bounds(a, b)`**: rect union, used for pong's swept collision rect.
 - **FPS assert**: `perf_commands` `expect_fps_above` already existed.
-- **Headless runs**: `run()` creates the headless GL context, headless
-  timing reads a steady clock, and `E2EApp` seeds `RandomEngine` per script.
-  `--headless` e2e passes.
+- **Headless**: two modes, no runtime branching. `DisplayMode::Headless` on
+  raylib is a hidden window (real GL, clock, sizes). `AFTER_HOURS_USE_NONE` is
+  a compile-time platform backend with no window or GPU. Its input reads the
+  e2e injector, so a headless build plays scripts. `input::gamepad::` and
+  `graphics::FLAG_WINDOW_HIGHDPI` let game code stay backend-neutral.
+- **Repeatable e2e**: `E2EApp::set_seed(s)` seeds `RandomEngine` per script,
+  opt-in (runs are random by default). Pong opts in.
 - **Rect overlap / centre**: `rect::overlaps` / `rect::center` already existed.
 
 ## Open
