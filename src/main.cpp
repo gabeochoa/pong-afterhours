@@ -188,8 +188,10 @@ struct ImpulseBall : System<HasVelocity> {
     }
 
     if (space && vel.vel.x == 0.f && vel.vel.y == 0.f) {
-      vel.vel.x = -0.5f;
-      vel.vel.y = -0.5f * 2;
+      float angle = (float)raylib::GetRandomValue(-35, 35) * DEG2RAD;
+      float dir = raylib::GetRandomValue(0, 1) == 0 ? -1.f : 1.f;
+      vel.vel.x = dir * cosf(angle);
+      vel.vel.y = sinf(angle);
     }
   }
 };
