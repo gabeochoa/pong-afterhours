@@ -272,13 +272,14 @@ struct ImpulsePaddle : System<HasVelocity, PlayerID> {
         down = true;
     }
 
-    if (up) {
-      vel.vel.y = -1.f;
-    } else if (down) {
-      vel.vel.y = 1.f;
-    } else {
+    if (up && down)
       vel.vel.y = 0.f;
-    }
+    else if (up)
+      vel.vel.y = -1.f;
+    else if (down)
+      vel.vel.y = 1.f;
+    else
+      vel.vel.y = 0.f;
   }
 };
 

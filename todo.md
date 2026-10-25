@@ -80,7 +80,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **Paddle keeps stale velocity if the input collector is missing.** (`src/main.cpp:208`) — `!has_value()` returns before the `else` branch that zeroes `vel.y`, so a missing collector leaves the previous frame's velocity in place. Fix: zero velocity before the early return.
 
-- [ ] **Simultaneous up+down picks up instead of cancelling.** (`src/main.cpp:230`) — `if (up) ... else if (down)` makes up win when both are held (with merged keyboard+gamepad inputs). Fix: set velocity to 0 when both up and down are pressed.
+- [x] **Simultaneous up+down picks up instead of cancelling.** (`src/main.cpp:230`) — `if (up) ... else if (down)` makes up win when both are held (with merged keyboard+gamepad inputs). Fix: set velocity to 0 when both up and down are pressed.
 
 - [ ] **Analog magnitude discarded.** (`vendor/afterhours/src/plugins/input_system.h:315`) — `visit_axis` returns the actual magnitude, but the collector stores `amount_pressed = 1.f`, so analog deflection never scales paddle speed. Fix: store the actual `amount` and scale paddle speed by it.
 
