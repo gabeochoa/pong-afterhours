@@ -24,6 +24,7 @@ constexpr float BALL_SPEED = 500.f;
 constexpr float PADDLE_SPEED = 450.f;
 constexpr int GAME_W = 1280;
 constexpr int GAME_H = 720;
+constexpr Vector2Type kCenter{GAME_W / 2.f, GAME_H / 2.f};
 constexpr char FONT_PATH[] =
     "resources/fonts/AtkinsonHyperlegible-Regular.ttf";
 
@@ -66,18 +67,6 @@ struct RenderScore : System<GameState> {
   }
 };
 
-struct RenderFPS : System<window_manager::ProvidesCurrentResolution> {
-  virtual void for_each_with(
-      const Entity &,
-      const window_manager::ProvidesCurrentResolution &, const float) const
-      override {
-    draw_text_right_aligned(
-        game_font,
-        (std::to_string((int)graphics::get_fps()) + " FPS").c_str(),
-        GAME_W - 10, 0, 20, kGreen);
-  }
-};
-
 enum class InputAction { P1Up, P1Down, P2Up, P2Down, Launch };
 
 std::map<int, input::ValidInputs> get_mapping() {
@@ -102,14 +91,17 @@ struct Transform : BaseComponent {
   Vector2Type size;
   Vector2Type prev;
 
-  Vector2Type pos() const { return position; }
   void update(const Vector2Type &v) {
     prev = position;
     position = v;
   }
-  Transform(Vector2Type pos, Vector2Type sz) : position(pos), size(sz), prev(pos) {}
+  Transform(Vector2Type pos, Vector2Type sz)
+      : position(pos), size(sz), prev(pos) {}
   RectangleType rect() const {
     return RectangleType{position.x, position.y, size.x, size.y};
+  }
+  RectangleType prev_rect() const {
+    return RectangleType{prev.x, prev.y, size.x, size.y};
   }
 };
 
@@ -135,15 +127,11 @@ struct ImpulseBall : System<HasVelocity, Ball> {
   // deliberately ignores the action's player id (unlike ImpulsePaddle).
   virtual void for_each_with(Entity &, HasVelocity &vel, Ball &,
                              const float) override {
-    if (!inpc.has_value()) {
+    if (!inpc.has_value())
       return;
-    }
-    bool space = false;
-
-    for (auto &actions_done : inpc.inputs_pressed()) {
-      if (actions_done.action == static_cast<int>(InputAction::Launch))
-        space = true;
-    }
+    const bool space = std::ranges::any_of(inpc.inputs_pressed(), [](auto &a) {
+      return a.action == static_cast<int>(InputAction::Launch);
+    });
 
     if (space && std::abs(vel.vel.x) < 1e-6f &&
         std::abs(vel.vel.y) < 1e-6f) {
@@ -159,7 +147,7 @@ struct ImpulseBall : System<HasVelocity, Ball> {
 struct MovePaddle : System<Transform, HasVelocity, PlayerID> {
   virtual void for_each_with(Entity &, Transform &transform, HasVelocity &vel,
                              PlayerID &, const float dt) override {
-    Vector2Type p = transform.pos();
+    Vector2Type p = transform.position;
     p.y = std::clamp(p.y + vel.vel.y * PADDLE_SPEED * dt, 0.f,
                      (float)GAME_H - transform.size.y);
     transform.update(p);
@@ -169,7 +157,7 @@ struct MovePaddle : System<Transform, HasVelocity, PlayerID> {
 struct MoveBall : System<Transform, HasVelocity, Ball> {
   virtual void for_each_with(Entity &, Transform &transform, HasVelocity &vel,
                              Ball &, const float dt) override {
-    Vector2Type p = transform.pos();
+    Vector2Type p = transform.position;
     p.x += vel.vel.x * BALL_SPEED * dt;
     p.y += vel.vel.y * BALL_SPEED * dt;
 
@@ -189,7 +177,7 @@ struct MoveBall : System<Transform, HasVelocity, Ball> {
       else
         state.left++;
       state.game_over = state.left >= WIN_SCORE || state.right >= WIN_SCORE;
-      p = Vector2Type{GAME_W / 2.f, GAME_H / 2.f};
+      p = kCenter;
       vel.vel = {0, 0};
     }
 
@@ -233,14 +221,7 @@ struct ImpulsePaddle : System<HasVelocity, PlayerID> {
         down = true;
     }
 
-    if (up && down)
-      vel.vel.y = 0.f;
-    else if (up)
-      vel.vel.y = -1.f;
-    else if (down)
-      vel.vel.y = 1.f;
-    else
-      vel.vel.y = 0.f;
+    vel.vel.y = static_cast<float>(down) - static_cast<float>(up);
   }
 };
 
@@ -248,20 +229,16 @@ struct Collide : System<Transform, HasVelocity, Ball> {
   RefEntities colliders;
 
   void once(const float) override {
-    colliders = EntityQuery().whereHasComponent<Transform>().gen();
+    colliders = EntityQuery().whereHasComponent<PlayerID>().gen();
   }
 
-  virtual void for_each_with(Entity &entity, Transform &transform,
+  virtual void for_each_with(Entity &, Transform &transform,
                              HasVelocity &hasVel, Ball &,
                              const float) override {
-    const auto swept = rect::bounds(
-        transform.rect(), RectangleType{transform.prev.x, transform.prev.y,
-                                            transform.size.x, transform.size.y});
+    const auto swept = rect::bounds(transform.rect(), transform.prev_rect());
 
     for (auto &ref : colliders) {
       Entity &other_e = ref.get();
-      if (other_e.id == entity.id)
-        continue;
       const Transform &other = other_e.get<Transform>();
       if (!rect::overlaps(swept, other.rect()))
         continue;
@@ -276,19 +253,16 @@ struct Collide : System<Transform, HasVelocity, Ball> {
 
       hasVel.vel.x *= -1.f;
 
-      float offset = d.y / (other.size.y / 2.f);
-      float paddle_vy = 0.f;
-      if (other_e.has<HasVelocity>())
-        paddle_vy = other_e.get<HasVelocity>().vel.y;
-      hasVel.vel.y =
-          std::clamp(offset + paddle_vy * 0.2f, -1.f, 1.f);
+      const float offset = d.y / (other.size.y / 2.f);
+      const float paddle_vy = other_e.get<HasVelocity>().vel.y;
+      hasVel.vel.y = std::clamp(offset + paddle_vy * 0.2f, -1.f, 1.f);
       float dir = hasVel.vel.x > 0 ? 1.f : -1.f;
       hasVel.vel.x =
           dir * sqrtf(std::max(0.f, 1.f - hasVel.vel.y * hasVel.vel.y));
 
-      Vector2Type p = transform.pos();
-      p.x = hasVel.vel.x > 0 ? other.pos().x + other.size.x
-                             : other.pos().x - transform.size.x;
+      Vector2Type p = transform.position;
+      p.x = hasVel.vel.x > 0 ? other.position.x + other.size.x
+                             : other.position.x - transform.size.x;
       transform.update(p);
       afterhours::PlaySound(hit_sound);
       break;
@@ -319,9 +293,7 @@ void make_paddle(input::GamepadID id) {
 Entity &make_ball() {
   auto &entity = EntityHelper::createEntity();
 
-  Vector2Type position = {.x = (float)GAME_W / 2.f, .y = (float)GAME_H / 2.f};
-
-  entity.addComponent<Transform>(position, Vector2Type{30.f, 30.f});
+  entity.addComponent<Transform>(kCenter, Vector2Type{30.f, 30.f});
   entity.addComponent<HasVelocity>();
   entity.addComponent<HasColor>(kYellow);
   entity.addComponent<Ball>();
@@ -387,7 +359,22 @@ int main(int argc, char *argv[]) {
     systems.register_render_system(std::make_unique<RenderEntities>());
     systems.register_render_system(
         std::make_unique<input::RenderConnectedGamepads>());
-    systems.register_render_system(std::make_unique<RenderFPS>());
+    systems.register_render_system([](float) {
+      const std::string fps = std::to_string((int)graphics::get_fps()) + " FPS";
+      draw_text_right_aligned(game_font, fps.c_str(), GAME_W - 10, 0, 20,
+                              kGreen);
+    });
+    // Last, so the menu sits on top of the ball.
+    systems.register_render_system([&](float) {
+      if (!state->paused)
+        return;
+      const char *text = state->left == 0 && state->right == 0
+                             ? "PONG - P to play"
+                             : "PAUSED - P to resume";
+      const float w = measure_text(game_font, text, 30, 1.f).x;
+      draw_text_with_shadow(game_font, text, GAME_W / 2.f - w * 0.5f,
+                            GAME_H / 2.f - 20, 30, kRayWhite, kBlack);
+    });
   };
 
   cfg.frame = [&] {
@@ -398,8 +385,7 @@ int main(int argc, char *argv[]) {
       state->left = state->right = 0;
       state->game_over = false;
       state->paused = false;
-      ball->get<Transform>().update(
-          Vector2Type{(float)GAME_W / 2.f, (float)GAME_H / 2.f});
+      ball->get<Transform>().update(kCenter);
       ball->get<HasVelocity>().vel = {0, 0};
     }
     if ((testing::platform_input::is_key_pressed(keys::P) ||
@@ -409,19 +395,6 @@ int main(int argc, char *argv[]) {
     if (!state->paused && !state->game_over)
       systems.tick_all(EntityHelper::get_entities_for_mod(), dt);
     systems.render_all(dt);
-    if (state->paused) {
-      // Centred + shadow: measure, then offset by half the width.
-      auto draw_menu_text = [](const char *text) {
-        const float w = measure_text(game_font, text, 30, 1.f).x;
-        draw_text_with_shadow(game_font, text, GAME_W / 2.f - w * 0.5f,
-                              GAME_H / 2.f - 20, 30, kRayWhite,
-                              kBlack);
-      };
-      if (state->left == 0 && state->right == 0)
-        draw_menu_text("PONG - P to play");
-      else
-        draw_menu_text("PAUSED - P to resume");
-    }
   };
 
   cfg.cleanup = [&] {
