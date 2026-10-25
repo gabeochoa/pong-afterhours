@@ -90,7 +90,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **`ProvidesTargetFPS` is dead.** (`src/main.cpp:348`) — `SetTargetFPS(200)` is hardcoded, the singleton `ProvidesTargetFPS` (added at line 356 with 200) is never read, and no consumer calls `SetTargetFPS` from it. Fix: drive FPS from the singleton, or delete the singleton.
 
-- [ ] **No `SetConfigFlags` before `InitWindow`.** (`src/main.cpp:347`) — no `FLAG_WINDOW_RESIZABLE`/`VSYNC`/`HIGHDPI` is set, leaving a fixed window with tearing. Fix: call `SetConfigFlags` before `InitWindow`.
+- [x] **No `SetConfigFlags` before `InitWindow`.** (`src/main.cpp:347`) — no `FLAG_WINDOW_RESIZABLE`/`VSYNC`/`HIGHDPI` is set, leaving a fixed window with tearing. Fix: call `SetConfigFlags` before `InitWindow`.
 
 - [ ] **`RenderEntities` ignores `HasColor`.** (`src/main.cpp:309`) — `System<Transform>` draws every rectangle `RAYWHITE`; `HasColor` (line 117) is never added to any entity or read. Fix: include `HasColor` in the render system (per-entity colour), or delete it.
 

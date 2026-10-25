@@ -39,10 +39,17 @@ OUTPUT_EXE := pong.exe
 # (g++-14 is also not installed on this machine.)
 CXX := clang++
 
-.PHONY: all clean
+.PHONY: all build run clean
+
+all: build
+
+build: $(OUTPUT_EXE)
+
+$(OUTPUT_EXE): $(SRC_FILES) $(H_FILES) makefile
+	$(CXX) $(FLAGS) $(INCLUDES) $(LIBS) $(SRC_FILES) -o $(OUTPUT_EXE)
+
+run: build
+	./$(OUTPUT_EXE)
 
 clean:
 	rm -rf $(OUTPUT_EXE) $(OUTPUT_EXE).dSYM output
-
-all:
-	$(CXX) $(FLAGS) $(INCLUDES) $(LIBS) src/main.cpp -o $(OUTPUT_EXE) && ./$(OUTPUT_EXE)
