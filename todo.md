@@ -114,7 +114,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **Inverted macro guard overwrites the user value.** (`vendor/afterhours/ah.h:14`) — `#if defined(AFTER_HOURS_MAX_COMPONENTS)` then `#define AFTER_HOURS_MAX_COMPONENTS 128` overwrites a user-provided value, and never defines it when unset. Fix: flip to `#ifndef`.
 
-- [ ] **Header not self-contained.** (`vendor/afterhours/src/plugins/input_system.h:4`) — includes only `<map>`/`<variant>` yet uses `std::string`, `std::to_string`, and `std::pair`, relying on transitive includes. Fix: add `<string>` and `<utility>` (and any other directly used headers).
+- [x] **Header not self-contained.** (`vendor/afterhours/src/plugins/input_system.h:4`) — includes only `<map>`/`<variant>` yet uses `std::string`, `std::to_string`, and `std::pair`, relying on transitive includes. Fix: add `<string>` and `<utility>` (and any other directly used headers).
 
 - [ ] **No pause/menu/restart state.** (`src/main.cpp:392`) — the main loop only checks `WindowShouldClose`; there is no pause, menu, game-over, or restart state machine. Fix: add a game-state machine and a pause key.
 

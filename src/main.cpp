@@ -207,8 +207,10 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
         return;
 
       vel.vel.y *= -1;
-      p += vel.vel * sz * dt;
-      p += vel.vel * sz * dt;
+      if (p.y < 0)
+        p.y = -p.y;
+      else
+        p.y = 2 * (GAME_H - transform.size.y) - p.y;
     }
 
     if (p.x < -10 || p.x > GAME_W + 10) {
