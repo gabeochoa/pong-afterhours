@@ -207,11 +207,13 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
     vec2 p = transform.pos();
     p += vel.vel * sz * dt;
 
-    if (p.y < 0 || p.y + transform.size.y > GAME_H) {
-      // players dont bounce
-      if (entity.has<PlayerID>())
-        return;
+    if (entity.has<PlayerID>()) {
+      p.y = std::clamp(p.y, 0.f, (float)GAME_H - transform.size.y);
+      transform.update(p);
+      return;
+    }
 
+    if (p.y < 0 || p.y + transform.size.y > GAME_H) {
       vel.vel.y *= -1;
       if (p.y < 0)
         p.y = -p.y;

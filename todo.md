@@ -72,7 +72,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **Single-step discrete collision can tunnel.** (`src/main.cpp:179`) — one `vel * sz * dt` step plus AABB overlap; a large dt moves the ball more than the 30px paddle thickness, skipping the paddle entirely. Fix: substep the movement or use swept AABB.
 
-- [ ] **Paddle wall hit discards the move instead of clamping.** (`src/main.cpp:184`) — if a paddle (`PlayerID`) is out of y-bounds, `for_each_with` returns without updating/clamping, so it stops short of the edge and never recovers if spawned outside. Fix: clamp `p.y` to `[0, height - size.y]` and apply the update.
+- [x] **Paddle wall hit discards the move instead of clamping.** (`src/main.cpp:184`) — if a paddle (`PlayerID`) is out of y-bounds, `for_each_with` returns without updating/clamping, so it stops short of the edge and never recovers if spawned outside. Fix: clamp `p.y` to `[0, height - size.y]` and apply the update.
 
 - [ ] **Ball launch ignores player id.** (`src/main.cpp:140`) — `ImpulseBall` never checks `actions_done.id`, so any player's `Launch` fires the ball — unlike `ImpulsePaddle`, which filters by player id. Fix: filter `Launch` to the serving player (or document any-player launch as intended).
 
