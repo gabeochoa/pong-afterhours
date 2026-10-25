@@ -138,7 +138,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **Exact float equality for the launch check.** (`src/main.cpp:150`) — `vel.vel.x == 0.f && vel.vel.y == 0.f` uses exact comparison; fractional or NaN velocity never launches. Fix: use an epsilon comparison or an explicit launched flag.
 
-- [ ] **`NOFLAGS` dead; `-Werror` never applied.** (`makefile:45`) — `NOFLAGS` defines `-Werror`, but `all` compiles with only `$(FLAGS)`. Fix: add `$(NOFLAGS)` to the compile command.
+- [x] **`NOFLAGS` dead; `-Werror` never applied.** (`makefile:45`) — `NOFLAGS` defines `-Werror`, but `all` compiles with only `$(FLAGS)`. Fix: add `$(NOFLAGS)` to the compile command.
 
 - [x] **`button_size` unused.** (`src/main.cpp:54`) — `const vec2 button_size = {100, 50};` is never referenced (grep shows only the definition). Fix: remove it.
 

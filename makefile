@@ -54,7 +54,7 @@ all: build
 build: $(OUTPUT_EXE)
 
 $(OUTPUT_EXE): $(SRC_FILES) $(H_FILES) makefile
-	$(CXX) $(FLAGS) $(INCLUDES) $(LIBS) $(SRC_FILES) -o $(OUTPUT_EXE)
+	$(CXX) $(FLAGS) $(NOFLAGS) $(INCLUDES) $(LIBS) $(SRC_FILES) -o $(OUTPUT_EXE)
 
 run: build
 	./$(OUTPUT_EXE)
