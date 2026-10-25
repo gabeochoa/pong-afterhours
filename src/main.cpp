@@ -5,7 +5,6 @@ backward::SignalHandling sh;
 } // namespace backward
 #include "std_include.h"
 
-#define AFTER_HOURS_USE_RAYLIB
 // Routes input polling through the e2e injector; without it injected input
 // never reaches gameplay.
 #define AFTER_HOURS_ENABLE_E2E_TESTING
@@ -28,6 +27,14 @@ constexpr int GAME_H = 720;
 constexpr char FONT_PATH[] =
     "resources/fonts/AtkinsonHyperlegible-Regular.ttf";
 
+// raylib's palette, spelled out so the headless (none) build has it too.
+constexpr ColorType kRayWhite{245, 245, 245, 255};
+constexpr ColorType kDarkGray{80, 80, 80, 255};
+constexpr ColorType kYellow{253, 249, 0, 255};
+constexpr ColorType kGreen{0, 228, 48, 255};
+constexpr ColorType kBlack{0, 0, 0, 255};
+constexpr ColorType kWhite{255, 255, 255, 255};
+
 struct GameState : BaseComponent {
   int left = 0;
   int right = 0;
@@ -48,14 +55,14 @@ struct RenderScore : System<GameState> {
         game_font,
         (std::to_string(state.left) + " : " + std::to_string(state.right))
             .c_str(),
-        GAME_W / 2, 10, 30, raylib::RAYWHITE);
+        GAME_W / 2, 10, 30, kRayWhite);
     if (state.game_over) {
       draw_text_centered(
           game_font,
           ((state.left > state.right ? "P1" : "P2") +
            std::string(" WINS - R to play again"))
               .c_str(),
-          GAME_W / 2, GAME_H / 2 - 40, 30, raylib::RAYWHITE);
+          GAME_W / 2, GAME_H / 2 - 40, 30, kRayWhite);
     }
   }
 };
@@ -68,7 +75,7 @@ struct RenderFPS : System<window_manager::ProvidesCurrentResolution> {
     draw_text_right_aligned(
         game_font,
         (std::to_string((int)graphics::get_fps()) + " FPS").c_str(),
-        GAME_W - 10, 0, 20, raylib::GREEN);
+        GAME_W - 10, 0, 20, kGreen);
   }
 };
 
@@ -85,69 +92,69 @@ auto get_mapping() {
   std::map<int, input::ValidInputs> mapping;
   auto key = [](InputAction a) { return static_cast<int>(a); };
   mapping[key(InputAction::P1Up)] = {
-      raylib::KEY_UP,
+      keys::UP,
       input::GamepadAxisWithDir{
-          .axis = raylib::GAMEPAD_AXIS_LEFT_Y,
+          .axis = input::gamepad::AXIS_LEFT_Y,
           .dir = -1,
       },
-      raylib::GAMEPAD_BUTTON_LEFT_FACE_UP,
+      input::gamepad::LEFT_FACE_UP,
   };
 
   mapping[key(InputAction::P1Down)] = {
-      raylib::KEY_DOWN,
+      keys::DOWN,
       input::GamepadAxisWithDir{
-          .axis = raylib::GAMEPAD_AXIS_LEFT_Y,
+          .axis = input::gamepad::AXIS_LEFT_Y,
           .dir = 1,
       },
-      raylib::GAMEPAD_BUTTON_LEFT_FACE_DOWN,
+      input::gamepad::LEFT_FACE_DOWN,
   };
 
   mapping[key(InputAction::P2Up)] = {
-      raylib::KEY_W,
+      keys::W,
       input::GamepadAxisWithDir{
-          .axis = raylib::GAMEPAD_AXIS_LEFT_Y,
+          .axis = input::gamepad::AXIS_LEFT_Y,
           .dir = -1,
       },
-      raylib::GAMEPAD_BUTTON_LEFT_FACE_UP,
+      input::gamepad::LEFT_FACE_UP,
   };
 
   mapping[key(InputAction::P2Down)] = {
-      raylib::KEY_S,
+      keys::S,
       input::GamepadAxisWithDir{
-          .axis = raylib::GAMEPAD_AXIS_LEFT_Y,
+          .axis = input::gamepad::AXIS_LEFT_Y,
           .dir = 1,
       },
-      raylib::GAMEPAD_BUTTON_LEFT_FACE_DOWN,
+      input::gamepad::LEFT_FACE_DOWN,
   };
 
   mapping[key(InputAction::Launch)] = {
-      raylib::KEY_SPACE,
-      raylib::GAMEPAD_BUTTON_RIGHT_FACE_UP,
-      raylib::GAMEPAD_BUTTON_RIGHT_FACE_DOWN,
-      raylib::GAMEPAD_BUTTON_RIGHT_FACE_LEFT,
-      raylib::GAMEPAD_BUTTON_RIGHT_FACE_RIGHT,
+      keys::SPACE,
+      input::gamepad::RIGHT_FACE_UP,
+      input::gamepad::RIGHT_FACE_DOWN,
+      input::gamepad::RIGHT_FACE_LEFT,
+      input::gamepad::RIGHT_FACE_RIGHT,
   };
   return mapping;
 }
 
 struct Transform : BaseComponent {
-  vec2 position;
-  vec2 size;
-  vec2 prev;
+  Vector2Type position;
+  Vector2Type size;
+  Vector2Type prev;
 
-  vec2 pos() const { return position; }
-  void update(const vec2 &v) {
+  Vector2Type pos() const { return position; }
+  void update(const Vector2Type &v) {
     prev = position;
     position = v;
   }
-  Transform(vec2 pos, vec2 sz) : position(pos), size(sz), prev(pos) {}
-  raylib::Rectangle rect() const {
-    return raylib::Rectangle{position.x, position.y, size.x, size.y};
+  Transform(Vector2Type pos, Vector2Type sz) : position(pos), size(sz), prev(pos) {}
+  RectangleType rect() const {
+    return RectangleType{position.x, position.y, size.x, size.y};
   }
 };
 
 struct HasVelocity : BaseComponent {
-  vec2 vel{};
+  Vector2Type vel{};
 };
 
 struct PlayerID : BaseComponent {
@@ -194,7 +201,7 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
   virtual void for_each_with(Entity &entity, Transform &transform,
                              HasVelocity &vel, const float dt) override {
     float speed = entity.has<PlayerID>() ? PADDLE_SPEED : BALL_SPEED;
-    vec2 p = transform.pos();
+    Vector2Type p = transform.pos();
     p.x += vel.vel.x * speed * dt;
     p.y += vel.vel.y * speed * dt;
 
@@ -224,7 +231,7 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
         state.game_over =
             state.left >= WIN_SCORE || state.right >= WIN_SCORE;
       }
-      p = vec2{GAME_W / 2.f, GAME_H / 2.f};
+      p = Vector2Type{GAME_W / 2.f, GAME_H / 2.f};
       vel.vel = {0, 0};
     }
 
@@ -292,7 +299,7 @@ struct Collide : System<Transform, HasVelocity> {
       return;
 
     const auto swept = rect::bounds(
-        transform.rect(), raylib::Rectangle{transform.prev.x, transform.prev.y,
+        transform.rect(), RectangleType{transform.prev.x, transform.prev.y,
                                             transform.size.x, transform.size.y});
 
     for (auto &ref : colliders) {
@@ -305,7 +312,7 @@ struct Collide : System<Transform, HasVelocity> {
 
       const auto c = rect::center(transform.rect());
       const auto oc = rect::center(other.rect());
-      const vec2 d{c.x - oc.x, c.y - oc.y};
+      const Vector2Type d{c.x - oc.x, c.y - oc.y};
       bool approaching =
           (hasVel.vel.x > 0 && d.x < 0) || (hasVel.vel.x < 0 && d.x > 0);
       if (!approaching)
@@ -323,7 +330,7 @@ struct Collide : System<Transform, HasVelocity> {
       hasVel.vel.x =
           dir * sqrtf(std::max(0.f, 1.f - hasVel.vel.y * hasVel.vel.y));
 
-      vec2 p = transform.pos();
+      Vector2Type p = transform.pos();
       p.x = hasVel.vel.x > 0 ? other.pos().x + other.size.x
                              : other.pos().x - transform.size.x;
       transform.update(p);
@@ -344,23 +351,23 @@ struct RenderEntities : System<Transform, HasColor> {
 void make_paddle(input::GamepadID id) {
   auto &entity = EntityHelper::createEntity();
 
-  vec2 position = {.x = id == 0 ? 150.f : (float)GAME_W - 180.f,
+  Vector2Type position = {.x = id == 0 ? 150.f : (float)GAME_W - 180.f,
                      .y = (float)GAME_H / 2.f};
 
   entity.addComponent<PlayerID>(id);
-  entity.addComponent<Transform>(position, vec2{30.f, 150.f});
+  entity.addComponent<Transform>(position, Vector2Type{30.f, 150.f});
   entity.addComponent<HasVelocity>();
-  entity.addComponent<HasColor>(raylib::RAYWHITE);
+  entity.addComponent<HasColor>(kRayWhite);
 }
 
 Entity &make_ball() {
   auto &entity = EntityHelper::createEntity();
 
-  vec2 position = {.x = (float)GAME_W / 2.f, .y = (float)GAME_H / 2.f};
+  Vector2Type position = {.x = (float)GAME_W / 2.f, .y = (float)GAME_H / 2.f};
 
-  entity.addComponent<Transform>(position, vec2{30.f, 30.f});
+  entity.addComponent<Transform>(position, Vector2Type{30.f, 30.f});
   entity.addComponent<HasVelocity>();
-  entity.addComponent<HasColor>(raylib::YELLOW);
+  entity.addComponent<HasColor>(kYellow);
   return entity;
 }
 
@@ -381,7 +388,7 @@ int main(int argc, char *argv[]) {
   cfg.title = "pong-afterhours";
   cfg.target_fps = 200;
   cfg.flags = graphics::FLAG_WINDOW_RESIZABLE | graphics::FLAG_VSYNC_HINT |
-              raylib::FLAG_WINDOW_HIGHDPI;
+              graphics::FLAG_WINDOW_HIGHDPI;
 
   cfg.display = testing::parse_e2e_args(argc, argv).display_mode();
   // Under e2e, step a fixed dt so a script plays out the same every run.
@@ -389,7 +396,7 @@ int main(int argc, char *argv[]) {
     cfg.fixed_dt = 1.f / 60.f;
 
   cfg.init = [&] {
-    graphics::set_exit_key(raylib::KEY_NULL);
+    graphics::set_exit_key(0);
     afterhours::InitAudioDevice();
     hit_sound = synth::beep(330.f, 0.09f);
     score_sound = synth::beep(660.f, 0.16f);
@@ -435,7 +442,7 @@ int main(int argc, char *argv[]) {
     systems.register_update_system(std::make_unique<Collide>());
 
     systems.register_render_system(
-        [](float) { graphics::clear_background(raylib::DARKGRAY); });
+        [](float) { graphics::clear_background(kDarkGray); });
     systems.register_render_system(std::make_unique<RenderScore>());
     systems.register_render_system(std::make_unique<RenderEntities>());
     systems.register_render_system(
@@ -451,16 +458,16 @@ int main(int argc, char *argv[]) {
     if (e2e)
       e2e->tick(dt);
     // platform_input reads injected input under --e2e, the keyboard otherwise.
-    if (testing::platform_input::is_key_pressed(raylib::KEY_R)) {
+    if (testing::platform_input::is_key_pressed(keys::R)) {
       state->left = state->right = 0;
       state->game_over = false;
       state->paused = false;
       ball->get<Transform>().update(
-          vec2{(float)GAME_W / 2.f, (float)GAME_H / 2.f});
+          Vector2Type{(float)GAME_W / 2.f, (float)GAME_H / 2.f});
       ball->get<HasVelocity>().vel = {0, 0};
     }
-    if ((testing::platform_input::is_key_pressed(raylib::KEY_P) ||
-         testing::platform_input::is_key_pressed(raylib::KEY_ESCAPE)) &&
+    if ((testing::platform_input::is_key_pressed(keys::P) ||
+         testing::platform_input::is_key_pressed(keys::ESCAPE)) &&
         !state->game_over)
       state->paused = !state->paused;
     if (!state->paused && !state->game_over)
@@ -472,8 +479,8 @@ int main(int argc, char *argv[]) {
       auto draw_menu_text = [](const char *text) {
         const float w = measure_text(game_font, text, 30, 1.f).x;
         draw_text_with_shadow(game_font, text, GAME_W / 2.f - w * 0.5f,
-                              GAME_H / 2.f - 20, 30, raylib::RAYWHITE,
-                              raylib::BLACK);
+                              GAME_H / 2.f - 20, 30, kRayWhite,
+                              kBlack);
       };
       if (state->left == 0 && state->right == 0)
         draw_menu_text("PONG - P to play");
@@ -482,14 +489,14 @@ int main(int argc, char *argv[]) {
     }
     end_texture_mode();
     graphics::begin_drawing();
-    graphics::clear_background(raylib::BLACK);
+    graphics::clear_background(kBlack);
     // Letterbox the fixed-size game texture into the resizable window.
     draw_render_texture(target,
                         window_manager::content_viewport(
                             graphics::get_screen_width(),
                             graphics::get_screen_height())
                             .dest,
-                        raylib::WHITE);
+                        kWhite);
     graphics::end_drawing();
     if (e2e) {
       e2e->post_render(target);

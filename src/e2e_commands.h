@@ -46,7 +46,7 @@ struct CenterPaddlesCommand : System<PendingE2ECommand> {
     for (int id = 0; id < 2; id++) {
       if (Entity *paddle = find_paddle(id)) {
         Transform &t = paddle->get<Transform>();
-        t.update(vec2{t.pos().x, (float)GAME_H / 2.f});
+        t.update(Vector2Type{t.pos().x, (float)GAME_H / 2.f});
         t.prev = t.pos();
         paddle->get<HasVelocity>().vel = {0, 0};
       }
@@ -74,9 +74,9 @@ struct TeleportBallCommand : System<PendingE2ECommand> {
       return;
     }
     Transform &t = ball->get<Transform>();
-    t.update(vec2{*x, *y});
+    t.update(Vector2Type{*x, *y});
     t.prev = t.pos();
-    ball->get<HasVelocity>().vel = vec2{*vx, *vy};
+    ball->get<HasVelocity>().vel = Vector2Type{*vx, *vy};
     cmd.consume();
   }
 };
@@ -142,7 +142,7 @@ struct AssertBallMovingCommand : System<PendingE2ECommand> {
       cmd.fail("assert_ball_moving: no ball");
       return;
     }
-    vec2 vel = ball->get<HasVelocity>().vel;
+    Vector2Type vel = ball->get<HasVelocity>().vel;
     cmd.expect(std::abs(vel.x) > 0.01f || std::abs(vel.y) > 0.01f,
            "ball is stopped");
   }
@@ -158,7 +158,7 @@ struct AssertBallStoppedCommand : System<PendingE2ECommand> {
       cmd.fail("assert_ball_stopped: no ball");
       return;
     }
-    vec2 vel = ball->get<HasVelocity>().vel;
+    Vector2Type vel = ball->get<HasVelocity>().vel;
     cmd.expect(std::abs(vel.x) <= 0.01f && std::abs(vel.y) <= 0.01f,
            "ball is moving");
   }

@@ -21,10 +21,13 @@ endif
 # pulled in gl.h; define it (empty, to match) and the multi-header opt-out up front.
 GL_FLAGS := -DGL_SILENCE_DEPRECATION= -DGL_DO_NOT_WARN_IF_MULTI_GL_VERSION_HEADERS_INCLUDED
 
-RELEASE_FLAGS = -std=c++23 $(RAYLIB_FLAGS) $(GL_FLAGS)
+RELEASE_FLAGS = -std=c++23 -DAFTER_HOURS_USE_RAYLIB $(RAYLIB_FLAGS) $(GL_FLAGS)
 
-FLAGS = -std=c++23 -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow \
-		-Wconversion -g $(RAYLIB_FLAGS) $(GL_FLAGS)
+WARN_FLAGS = -std=c++23 -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow \
+		-Wconversion -g
+FLAGS = $(WARN_FLAGS) -DAFTER_HOURS_USE_RAYLIB $(RAYLIB_FLAGS) $(GL_FLAGS)
+# No window, no GPU, no raylib: the afterhours none backend.
+HEADLESS_FLAGS = $(WARN_FLAGS) -DAFTER_HOURS_USE_NONE
 
 NOFLAGS = -Wno-deprecated-volatile -Wno-missing-field-initializers \
 		  -Wno-c99-extensions -Wno-unused-function -Wno-sign-conversion \
@@ -47,20 +50,23 @@ DEPENDS := $(patsubst %.cpp,%.d,$(SRC_FILES))
 
 
 OUTPUT_EXE := pong.exe
+HEADLESS_EXE := pong_headless.exe
 
 # NOTE: g++ (Homebrew GCC) cannot parse the macOS 15/26 SDK headers. Use clang++.
 # (g++-14 is also not installed on this machine.)
 CXX ?= clang++
 
-.PHONY: all build run test e2e e2e-window clean
+.PHONY: all build headless run test e2e e2e-window clean
 
 all: build
 
 test: build
 	test -x $(OUTPUT_EXE)
 
-# Runs the e2e scripts headless; screenshots land in tests/e2e/screenshots.
-e2e: build
+# All scripts on the headless build first; once they pass, one run on the
+# real renderer in a hidden window writes tests/e2e/screenshots.
+e2e: headless build
+	./$(HEADLESS_EXE) --e2e --test-script-dir tests/e2e
 	./$(OUTPUT_EXE) --e2e --test-script-dir tests/e2e \
 		--screenshot-dir tests/e2e/screenshots --headless
 
@@ -70,12 +76,16 @@ e2e-window: build
 		--screenshot-dir tests/e2e/screenshots
 
 build: $(OUTPUT_EXE)
+headless: $(HEADLESS_EXE)
 
 $(OUTPUT_EXE): $(SRC_FILES) $(H_FILES) $(AH_FILES) makefile
 	$(CXX) $(FLAGS) $(NOFLAGS) $(INCLUDES) $(LIBS) $(SRC_FILES) -o $(OUTPUT_EXE)
+
+$(HEADLESS_EXE): $(SRC_FILES) $(H_FILES) $(AH_FILES) makefile
+	$(CXX) $(HEADLESS_FLAGS) $(NOFLAGS) $(INCLUDES) $(SRC_FILES) -o $(HEADLESS_EXE)
 
 run: build
 	./$(OUTPUT_EXE)
 
 clean:
-	rm -rf $(OUTPUT_EXE) $(OUTPUT_EXE).dSYM output
+	rm -rf $(OUTPUT_EXE) $(OUTPUT_EXE).dSYM $(HEADLESS_EXE) $(HEADLESS_EXE).dSYM output
