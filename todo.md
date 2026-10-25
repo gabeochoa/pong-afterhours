@@ -110,7 +110,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **Draft `-std=c++2c`.** (`makefile:18`) — `FLAGS` uses `-std=c++2c`, an experimental pre-C++26 dialect, not a stable portable standard. Fix: use `-std=c++23`.
 
-- [ ] **Empty compilation database.** (`compile_commands.json:1`) — root file is `[]`; the makefile never generates it, so clangd has no translation unit for `src/main.cpp`. Fix: generate it from the build, or stop tracking the empty file.
+- [x] **Empty compilation database.** (`compile_commands.json:1`) — root file is `[]`; the makefile never generates it, so clangd has no translation unit for `src/main.cpp`. Fix: generate it from the build, or stop tracking the empty file.
 
 - [ ] **Inverted macro guard overwrites the user value.** (`vendor/afterhours/ah.h:14`) — `#if defined(AFTER_HOURS_MAX_COMPONENTS)` then `#define AFTER_HOURS_MAX_COMPONENTS 128` overwrites a user-provided value, and never defines it when unset. Fix: flip to `#ifndef`.
 
