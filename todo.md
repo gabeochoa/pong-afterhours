@@ -88,7 +88,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **Input freshness relies on implicit registration order.** (`src/main.cpp:373`) — input systems are registered before `ImpulseBall`/`ImpulsePaddle` with no guarantee; reordering would make them read stale inputs. Fix: document/enforce the ordering (or make the input tick an explicit first phase).
 
-- [ ] **`ProvidesTargetFPS` is dead.** (`src/main.cpp:348`) — `SetTargetFPS(200)` is hardcoded, the singleton `ProvidesTargetFPS` (added at line 356 with 200) is never read, and no consumer calls `SetTargetFPS` from it. Fix: drive FPS from the singleton, or delete the singleton.
+- [x] **`ProvidesTargetFPS` is dead.** (`src/main.cpp:348`) — `SetTargetFPS(200)` is hardcoded, the singleton `ProvidesTargetFPS` (added at line 356 with 200) is never read, and no consumer calls `SetTargetFPS` from it. Fix: drive FPS from the singleton, or delete the singleton.
 
 - [ ] **No `SetConfigFlags` before `InitWindow`.** (`src/main.cpp:347`) — no `FLAG_WINDOW_RESIZABLE`/`VSYNC`/`HIGHDPI` is set, leaving a fixed window with tearing. Fix: call `SetConfigFlags` before `InitWindow`.
 

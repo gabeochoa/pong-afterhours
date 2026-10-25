@@ -417,7 +417,6 @@ static bool load_gamepad_mappings() {
 
 int main(void) {
   raylib::InitWindow(GAME_W, GAME_H, "wm-afterhours");
-  raylib::SetTargetFPS(200);
 
   if (!load_gamepad_mappings())
     std::cerr << "warning: gamecontrollerdb.txt not found, "
@@ -431,6 +430,8 @@ int main(void) {
     singletons.addComponent<GameState>();
   }
   GameState &state = singletons.get<GameState>();
+  raylib::SetTargetFPS(
+      singletons.get<window_manager::ProvidesTargetFPS>().fps);
 
   make_paddle(0);
   make_paddle(1);
