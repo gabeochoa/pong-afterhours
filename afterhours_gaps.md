@@ -54,10 +54,14 @@ Shared components in a common header. Replaces pong's structs
 (~24 -> ~5). Must keep `prev` (pong's swept collision uses it), or pong
 keeps its own `Transform`.
 
-### 8. Letterbox helper: `graphics::draw_letterboxed(target)`
+### 8. Letterbox helper — withdrawn, already supported
 
-Replaces pong's scale / `draw_texture_pro` math (~15 -> 1). Subsumed by
-the App runner if that exists; filed separately so it can land first.
+Not a gap. The library already supports resize / scale / pillarbox /
+letterbox via `window_manager::content_viewport` (dest + scale),
+`window_to_content` / `content_to_window`, and `get_mouse_position`
+already applying the mapping (see afterhours `docs/letterboxing.md`).
+Pong was using the library wrong: it re-derived the present dest math
+instead of calling `content_viewport`. No new helper.
 
 ### 9. Input-collector base
 

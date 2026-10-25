@@ -39,38 +39,14 @@ struct GameState : BaseComponent {
 static Font game_font{};
 static bool font_ready = false;
 
-static void draw_game_text(const char *text, float x, float y, float size,
-                           Color color) {
-  if (font_ready)
-    draw_text_ex(game_font, text, vec2{x, y}, size, 1.f, color);
-  else
-    draw_text(text, x, y, size, color);
+// The custom font when it loaded, else raylib's default font.
+static Font effective_font() {
+  return font_ready ? game_font : get_default_font();
 }
 
 static SoundType hit_sound{};
 static SoundType score_sound{};
 static bool sound_ready = false;
-
-static SoundType make_beep(float freq, float seconds) {
-  constexpr int sample_rate = 44100;
-  int frames = (int)(sample_rate * seconds);
-  std::vector<short> samples(frames);
-  int attack = sample_rate / 200;
-  int release = sample_rate / 80;
-  for (int i = 0; i < frames; i++) {
-    float t = (float)i / (float)sample_rate;
-    float env = std::min(1.f, (float)i / (float)attack) *
-                std::min(1.f, (float)(frames - i) / (float)release);
-    samples[i] =
-        (short)(sinf(2.f * 3.14159265f * freq * t) * env * 8000.f);
-  }
-  WaveType wave{.frameCount = (unsigned)frames,
-                .sampleRate = (unsigned)sample_rate,
-                .sampleSize = 16,
-                .channels = 1,
-                .data = samples.data()};
-  return afterhours::LoadSoundFromWave(wave);
-}
 
 static void play_beep(const SoundType &sound) {
   if (sound_ready)
@@ -80,16 +56,18 @@ static void play_beep(const SoundType &sound) {
 struct RenderScore : System<GameState> {
   virtual void for_each_with(const Entity &, const GameState &state,
                              const float) const override {
-    draw_game_text(
+    draw_text_centered(
+        effective_font(),
         (std::to_string(state.left) + " : " + std::to_string(state.right))
             .c_str(),
-        GAME_W / 2 - 30, 10, 30, raylib::RAYWHITE);
+        GAME_W / 2, 10, 30, raylib::RAYWHITE);
     if (state.game_over) {
-      draw_game_text(
+      draw_text_centered(
+          effective_font(),
           ((state.left > state.right ? "P1" : "P2") +
            std::string(" WINS - R to play again"))
               .c_str(),
-          GAME_W / 2 - 190, GAME_H / 2 - 40, 30, raylib::RAYWHITE);
+          GAME_W / 2, GAME_H / 2 - 40, 30, raylib::RAYWHITE);
     }
   }
 };
@@ -99,9 +77,10 @@ struct RenderFPS : System<window_manager::ProvidesCurrentResolution> {
       const Entity &,
       const window_manager::ProvidesCurrentResolution &, const float) const
       override {
-    draw_game_text(
+    draw_text_right_aligned(
+        effective_font(),
         (std::to_string((int)graphics::get_fps()) + " FPS").c_str(),
-        GAME_W - 80, 0, 20, raylib::GREEN);
+        GAME_W - 10, 0, 20, raylib::GREEN);
   }
 };
 
@@ -427,8 +406,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   afterhours::InitAudioDevice();
-  hit_sound = make_beep(330.f, 0.09f);
-  score_sound = make_beep(660.f, 0.16f);
+  hit_sound = synth::beep(330.f, 0.09f);
+  score_sound = synth::beep(660.f, 0.16f);
   sound_ready = true;
 
   game_font = load_font_from_file(FONT_PATH, 32);
@@ -517,28 +496,32 @@ int main(int argc, char *argv[]) {
     begin_texture_mode(target);
     systems.render_all(dt);
     if (state.paused) {
+      // Centred + shadow: measure, then offset the shadow call by half the
+      // width (see draw_text_centered).
+      auto draw_menu_text = [](const char *text) {
+        const Font font = effective_font();
+        const float w = measure_text(font, text, 30, 1.f).x;
+        draw_text_with_shadow(font, text, GAME_W / 2.f - w * 0.5f,
+                              GAME_H / 2.f - 20, 30, raylib::RAYWHITE,
+                              raylib::BLACK);
+      };
       if (state.left == 0 && state.right == 0)
-        draw_game_text("PONG - P to play", GAME_W / 2 - 140,
-                       GAME_H / 2 - 20, 30, raylib::RAYWHITE);
+        draw_menu_text("PONG - P to play");
       else
-        draw_game_text("PAUSED - P to resume", GAME_W / 2 - 180,
-                       GAME_H / 2 - 20, 30, raylib::RAYWHITE);
+        draw_menu_text("PAUSED - P to resume");
     }
     end_texture_mode();
     graphics::begin_drawing();
     graphics::clear_background(raylib::BLACK);
-    float scale =
-        std::min((float)graphics::get_screen_width() / (float)GAME_W,
-                 (float)graphics::get_screen_height() / (float)GAME_H);
-    float dw = (float)GAME_W * scale;
-    float dh = (float)GAME_H * scale;
+    // Present the fixed game texture letterboxed into the resizable
+    // window; see afterhours docs/letterboxing.md. The flipped source
+    // rect is the raylib render-texture flip.
+    const auto vp = window_manager::content_viewport(
+        graphics::get_screen_width(), graphics::get_screen_height());
     draw_texture_pro(
         target.texture,
         raylib::Rectangle{0.f, 0.f, (float)GAME_W, -(float)GAME_H},
-        raylib::Rectangle{((float)graphics::get_screen_width() - dw) / 2.f,
-                          ((float)graphics::get_screen_height() - dh) / 2.f,
-                          dw, dh},
-        vec2{0, 0}, 0.f, raylib::WHITE);
+        vp.dest, vec2{0, 0}, 0.f, raylib::WHITE);
     graphics::end_drawing();
     if (e2e) {
       pong_e2e::post_render(*e2e);
