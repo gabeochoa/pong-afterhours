@@ -142,7 +142,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **`button_size` unused.** (`src/main.cpp:54`) — `const vec2 button_size = {100, 50};` is never referenced (grep shows only the definition). Fix: remove it.
 
-- [ ] **`focus_rect` unused.** (`src/main.cpp:106`) — `Transform::focus_rect()` is defined but never called (grep shows only the definition). Fix: remove it, or use it for a focus/debug outline.
+- [x] **`focus_rect` unused.** (`src/main.cpp:106`) — `Transform::focus_rect()` is defined but never called (grep shows only the definition). Fix: remove it, or use it for a focus/debug outline.
 
 - [ ] **Dead negation.** (`.gitignore:20`) — `!/lib*.dylib` has no preceding `*.dylib` ignore, so it matches nothing and does nothing. Fix: add a `*.dylib` ignore or drop the negation.
 

@@ -149,11 +149,6 @@ struct Transform : BaseComponent {
     return raylib::Rectangle{position.x, position.y, size.x, size.y};
   }
 
-  raylib::Rectangle focus_rect(int rw = 2) const {
-    return raylib::Rectangle{position.x - (float)rw, position.y - (float)rw,
-                             size.x + (2.f * (float)rw),
-                             size.y + (2.f * (float)rw)};
-  }
 };
 
 struct HasVelocity : BaseComponent {
