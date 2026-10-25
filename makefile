@@ -37,6 +37,8 @@ SRC_FILES := $(wildcard src/*.cpp src/**/*.cpp)
 # Top-level src/*.h too: src/**/*.h alone only matches subdirectories, so
 # editing a header next to main.cpp would silently skip the rebuild.
 H_FILES := $(wildcard src/*.h src/**/*.h src/*.hpp src/**/*.hpp)
+# The library is header-only, so its edits must trigger a rebuild too.
+AH_FILES := $(shell find vendor/afterhours/src -name '*.h')
 OBJ_DIR := ./output
 OBJ_FILES := $(SRC_FILES:%.cpp=$(OBJ_DIR)/%.o)
 
@@ -65,7 +67,7 @@ e2e: build
 
 build: $(OUTPUT_EXE)
 
-$(OUTPUT_EXE): $(SRC_FILES) $(H_FILES) makefile
+$(OUTPUT_EXE): $(SRC_FILES) $(H_FILES) $(AH_FILES) makefile
 	$(CXX) $(FLAGS) $(NOFLAGS) $(INCLUDES) $(LIBS) $(SRC_FILES) -o $(OUTPUT_EXE)
 
 run: build
