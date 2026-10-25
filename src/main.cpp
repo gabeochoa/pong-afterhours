@@ -180,14 +180,9 @@ struct ImpulseBall : System<HasVelocity> {
     }
     bool space = false;
 
-    for (auto &actions_done : inpc.inputs()) {
-      switch (actions_done.action) {
-      case InputAction::Launch:
+    for (auto &actions_done : inpc.inputs_pressed()) {
+      if (actions_done.action == InputAction::Launch)
         space = true;
-        break;
-      default:
-        break;
-      }
     }
 
     if (space && vel.vel.x == 0.f && vel.vel.y == 0.f) {

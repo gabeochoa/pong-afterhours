@@ -52,7 +52,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **`all` builds one TU and runs the game.** (`makefile:44`) — `all` compiles only `src/main.cpp` and `&& ./pong.exe`, ignoring `SRC_FILES`/`OBJ_FILES` and blocking CI/headless builds. Fix: split into a `build` target (compile all `SRC_FILES`) and a separate `run` target.
 
-- [ ] **`brew` runs at parse time on every invocation.** (`makefile:5`) — `export PKG_CONFIG_PATH := $(shell brew --prefix)/...` executes brew for every make invocation (including `clean`/`--help`), and a brew failure leaves a leading `:` (CWD in the search path). Fix: guard brew failure / lazily compute the path only for build targets.
+- [x] **`brew` runs at parse time on every invocation.** (`makefile:5`) — `export PKG_CONFIG_PATH := $(shell brew --prefix)/...` executes brew for every make invocation (including `clean`/`--help`), and a brew failure leaves a leading `:` (CWD in the search path). Fix: guard brew failure / lazily compute the path only for build targets.
 
 - [ ] **Hardcoded Homebrew/macOS link line.** (`makefile:10`) — `$(shell brew --prefix raylib)/lib/libraylib.a` plus `-framework OpenGL/Cocoa/IOKit/...` breaks Linux/Windows/Intel-brew setups. Fix: use `pkg-config --libs raylib` with conditional macOS-only frameworks.
 
