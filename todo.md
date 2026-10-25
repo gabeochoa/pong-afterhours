@@ -10,7 +10,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 ## Critical
 
-- [ ] **`gen_first_enforce` out-of-bounds read on empty query (UB).** (`vendor/afterhours/src/entity_query.h:186`) — logs an error when `values` is empty, then unconditionally `return values[0];`. Fix: throw / return an empty optional instead of indexing an empty vector; callers such as `MoveAndBounce::once` must handle the empty case.
+- [x] **`gen_first_enforce` out-of-bounds read on empty query (UB).** (`vendor/afterhours/src/entity_query.h:186`) — logs an error when `values` is empty, then unconditionally `return values[0];`. Fix: throw / return an empty optional instead of indexing an empty vector; callers such as `MoveAndBounce::once` must handle the empty case.
 
 ## High
 

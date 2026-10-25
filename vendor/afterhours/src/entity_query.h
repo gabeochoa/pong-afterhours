@@ -6,6 +6,7 @@
 #include <iterator>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <vector>
 
 #include "entity.h"
@@ -176,12 +177,9 @@ struct EntityQuery {
   }
 
   [[nodiscard]] Entity &gen_first_enforce() const {
-    if (!has_values()) {
-      log_error("tried to use gen enforce, but found no values");
-    }
     auto values = gen_with_options({.stop_on_first = true});
     if (values.empty()) {
-      log_error("we expected to find a value but didnt...");
+      throw std::runtime_error("gen_first_enforce: no matching entity");
     }
     return values[0];
   }
