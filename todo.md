@@ -60,7 +60,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **GLFW include path case mismatch.** (`src/rl.h:26`) — `#include <GLFW/glfw3.h>` needs a `vendor/GLFW/` directory, but the vendored directory is lowercase `vendor/glfw/` (verified by listing); only Homebrew's GLFW satisfies the include. Fix: align the include path / directory case (e.g. `<glfw/glfw3.h>`).
 
-- [ ] **Vendored raylib headers missing.** (`vendor/RaylibOpOverloads.h:3`) — includes `<raylib.h>`/`<raymath.h>`, but `vendor/` contains no `raylib.h`/`raymath.h` (only `afterhours/`, `backward/`, `fmt/`, `glfw/`, `magic_enum/`, `RaylibOpOverloads.h`), so the build works only via Homebrew pkg-config. Fix: vendor the raylib headers or document the Homebrew requirement.
+- [x] **Vendored raylib headers missing.** (`vendor/RaylibOpOverloads.h:3`) — includes `<raylib.h>`/`<raymath.h>`, but `vendor/` contains no `raylib.h`/`raymath.h` (only `afterhours/`, `backward/`, `fmt/`, `glfw/`, `magic_enum/`, `RaylibOpOverloads.h`), so the build works only via Homebrew pkg-config. Fix: vendor the raylib headers or document the Homebrew requirement.
 
 - [ ] **Y-bounce double-advances after the flip.** (`src/main.cpp:187`) — position is stepped once at line 179, then after `vel.y *= -1` the identical `p += vel * sz * dt` runs twice (lines 187–188) — 3 steps in one frame vs 1 normally, net `p0 - v*step` instead of a mirrored overshoot. Fix: step once after the flip and clamp `p.y` to `[0, H - h]`.
 

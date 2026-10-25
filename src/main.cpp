@@ -463,8 +463,10 @@ int main(void) {
       ball.get<Transform>().update(vec2{1280.f / 2.f, 720.f / 2.f});
       ball.get<HasVelocity>().vel = {0, 0};
     }
+    float dt = raylib::GetFrameTime();
+    systems.tick_all(dt);
     raylib::BeginDrawing();
-    { systems.run(raylib::GetFrameTime()); }
+    systems.render_all(dt);
     raylib::EndDrawing();
   }
 
