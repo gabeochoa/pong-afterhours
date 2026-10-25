@@ -112,7 +112,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **Empty compilation database.** (`compile_commands.json:1`) — root file is `[]`; the makefile never generates it, so clangd has no translation unit for `src/main.cpp`. Fix: generate it from the build, or stop tracking the empty file.
 
-- [ ] **Inverted macro guard overwrites the user value.** (`vendor/afterhours/ah.h:14`) — `#if defined(AFTER_HOURS_MAX_COMPONENTS)` then `#define AFTER_HOURS_MAX_COMPONENTS 128` overwrites a user-provided value, and never defines it when unset. Fix: flip to `#ifndef`.
+- [x] **Inverted macro guard overwrites the user value.** (`vendor/afterhours/ah.h:14`) — `#if defined(AFTER_HOURS_MAX_COMPONENTS)` then `#define AFTER_HOURS_MAX_COMPONENTS 128` overwrites a user-provided value, and never defines it when unset. Fix: flip to `#ifndef`.
 
 - [ ] **Header not self-contained.** (`vendor/afterhours/src/plugins/input_system.h:4`) — includes only `<map>`/`<variant>` yet uses `std::string`, `std::to_string`, and `std::pair`, relying on transitive includes. Fix: add `<string>` and `<utility>` (and any other directly used headers).
 

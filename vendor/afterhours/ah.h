@@ -11,7 +11,7 @@
 
 namespace afterhours {
 
-#if defined(AFTER_HOURS_MAX_COMPONENTS)
+#ifndef AFTER_HOURS_MAX_COMPONENTS
 #define AFTER_HOURS_MAX_COMPONENTS 128
 #endif
 
