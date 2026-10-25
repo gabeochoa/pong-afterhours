@@ -1,14 +1,13 @@
-#include "backward/backward.hpp"
-
-namespace backward {
-backward::SignalHandling sh;
-} // namespace backward
-#include "std_include.h"
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <string>
 
 // Routes input polling through the e2e injector; without it injected input
 // never reaches gameplay.
 #define AFTER_HOURS_ENABLE_E2E_TESTING
 #include "afterhours/ah.h"
+#include "afterhours/src/crash_handler.h"
 #include "afterhours/src/drawing_helpers.h"
 #include "afterhours/src/font_helper.h"
 #include "afterhours/src/graphics.h"
@@ -304,6 +303,7 @@ Entity &make_ball() {
 #include "e2e_commands.h"
 
 int main(int argc, char *argv[]) {
+  crash::install_handler();
   SystemManager systems;
   GameState *state = nullptr;
   Entity *ball = nullptr;
