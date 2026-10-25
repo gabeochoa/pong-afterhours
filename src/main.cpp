@@ -41,12 +41,6 @@ static Font game_font{};
 
 static SoundType hit_sound{};
 static SoundType score_sound{};
-static bool sound_ready = false;
-
-static void play_beep(const SoundType &sound) {
-  if (sound_ready)
-    afterhours::PlaySound(sound);
-}
 
 struct RenderScore : System<GameState> {
   virtual void for_each_with(const Entity &, const GameState &state,
@@ -221,7 +215,7 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
 
     if (p.x + transform.size.x < 0 || p.x > GAME_W) {
       auto scored = EntityQuery().whereHasComponent<GameState>().gen_first();
-      play_beep(score_sound);
+      afterhours::PlaySound(score_sound);
       if (scored.valid()) {
         GameState &state = scored.asE().get<GameState>();
         if (p.x + transform.size.x < 0)
@@ -342,7 +336,7 @@ struct Collide : System<Transform, HasVelocity> {
       p.x = hasVel.vel.x > 0 ? other.pos().x + other.size.x
                              : other.pos().x - transform.size.x;
       transform.update(p);
-      play_beep(hit_sound);
+      afterhours::PlaySound(hit_sound);
       break;
     }
   }
@@ -396,7 +390,6 @@ int main(int argc, char *argv[]) {
   afterhours::InitAudioDevice();
   hit_sound = synth::beep(330.f, 0.09f);
   score_sound = synth::beep(660.f, 0.16f);
-  sound_ready = true;
 
   game_font = load_font_from_file(FONT_PATH, 32);
   if (!font_is_usable(game_font))
@@ -523,10 +516,8 @@ int main(int argc, char *argv[]) {
     exit_code = pong_e2e::finish(*e2e);
 
   unload_render_texture(target);
-  if (sound_ready) {
-    afterhours::UnloadSound(hit_sound);
-    afterhours::UnloadSound(score_sound);
-  }
+  afterhours::UnloadSound(hit_sound);
+  afterhours::UnloadSound(score_sound);
   afterhours::CloseAudioDevice();
   graphics::close_window();
   return exit_code;
