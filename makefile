@@ -21,9 +21,9 @@ endif
 # pulled in gl.h; define it (empty, to match) and the multi-header opt-out up front.
 GL_FLAGS := -DGL_SILENCE_DEPRECATION= -DGL_DO_NOT_WARN_IF_MULTI_GL_VERSION_HEADERS_INCLUDED
 
-RELEASE_FLAGS = -std=c++2c $(RAYLIB_FLAGS) $(GL_FLAGS)
+RELEASE_FLAGS = -std=c++23 $(RAYLIB_FLAGS) $(GL_FLAGS)
 
-FLAGS = -std=c++2c -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow \
+FLAGS = -std=c++23 -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow \
 		-Wconversion -g $(RAYLIB_FLAGS) $(GL_FLAGS)
 
 NOFLAGS = -Wno-deprecated-volatile -Wno-missing-field-initializers \

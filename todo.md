@@ -108,7 +108,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **`CXX :=` blocks environment override.** (`makefile:40`) — `CXX := clang++` overrides environment `CXX` (only command-line assignment beats it), breaking GCC/Linux setups. Fix: `CXX ?= clang++`.
 
-- [ ] **Draft `-std=c++2c`.** (`makefile:18`) — `FLAGS` uses `-std=c++2c`, an experimental pre-C++26 dialect, not a stable portable standard. Fix: use `-std=c++23`.
+- [x] **Draft `-std=c++2c`.** (`makefile:18`) — `FLAGS` uses `-std=c++2c`, an experimental pre-C++26 dialect, not a stable portable standard. Fix: use `-std=c++23`.
 
 - [ ] **Empty compilation database.** (`compile_commands.json:1`) — root file is `[]`; the makefile never generates it, so clangd has no translation unit for `src/main.cpp`. Fix: generate it from the build, or stop tracking the empty file.
 
