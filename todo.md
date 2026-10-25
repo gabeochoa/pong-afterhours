@@ -24,7 +24,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **`Collide` flips paddle velocity too.** (`src/main.cpp:301`) — `for_each_with` runs for every `Transform + HasVelocity` entity, including paddles (which have `HasVelocity`), and flips its own velocity on overlap — a ball–paddle hit reverses the paddle as well as the ball. Fix: only flip the ball (e.g. skip entities with `PlayerID`), and reverse x only.
 
-- [ ] **Shared keyboard mapping for both paddles.** (`src/main.cpp:67`) — `get_mapping()` gives both players `KEY_UP`/`KEY_DOWN`; there are no W/S (or other) keys for P2, so one keyboard cannot drive two paddles independently. Fix: add per-player keyboard bindings (e.g. arrows for P1, W/S for P2).
+- [x] **Shared keyboard mapping for both paddles.** (`src/main.cpp:67`) — `get_mapping()` gives both players `KEY_UP`/`KEY_DOWN`; there are no W/S (or other) keys for P2, so one keyboard cannot drive two paddles independently. Fix: add per-player keyboard bindings (e.g. arrows for P1, W/S for P2).
 
 - [ ] **P2 keyboard input is dead via the id filter.** (`src/main.cpp:216`) — `ImpulsePaddle` drops actions with `actions_done.id != playerID.id`, but keyboard actions are recorded with `id = 0`; P2 (`id = 1`) therefore never sees keyboard input even if distinct keys were mapped. Fix: share keyboard input with both paddles (keyed by binding, not gamepad id) or tag keyboard actions per-player.
 

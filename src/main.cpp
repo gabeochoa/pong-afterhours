@@ -328,6 +328,14 @@ struct Collide : System<Transform, HasVelocity> {
     if (colliders.size() == 0)
       return;
 
+    const Transform &other = colliders[0].get().get<Transform>();
+    float dx = (transform.pos().x + transform.size.x / 2.f) -
+               (other.pos().x + other.size.x / 2.f);
+    bool approaching =
+        (hasVel.vel.x > 0 && dx < 0) || (hasVel.vel.x < 0 && dx > 0);
+    if (!approaching)
+      return;
+
     hasVel.vel.x *= -1.f;
   }
 };
