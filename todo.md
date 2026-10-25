@@ -36,7 +36,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **Gamepad DB path is CWD-relative.** (`src/main.cpp:333`) — `std::ifstream ifs("gamecontrollerdb.txt")` resolves against the working directory; the makefile never copies/installs the DB, so launching from another directory silently skips mappings (file exists at repo root). Fix: resolve the DB path relative to the executable/bundle, or install it alongside the binary.
 
-- [ ] **Update runs inside `BeginDrawing`.** (`src/main.cpp:393`) — `systems.run()` is called between `BeginDrawing()` and `EndDrawing()`; `system.h:216` shows `run()` = `tick_all()` + `render_all()`, so game logic executes inside the draw block. Fix: split tick before `BeginDrawing`, and run only render systems inside the draw block.
+- [x] **Update runs inside `BeginDrawing`.** (`src/main.cpp:393`) — `systems.run()` is called between `BeginDrawing()` and `EndDrawing()`; `system.h:216` shows `run()` = `tick_all()` + `render_all()`, so game logic executes inside the draw block. Fix: split tick before `BeginDrawing`, and run only render systems inside the draw block.
 
 - [ ] **Resolution fetched once, never re-fetched.** (`vendor/afterhours/src/plugins/window_manager.h:89`) — `CollectCurrentResolution` clears `should_refetch` after the first fetch and nothing ever sets it true again (no resize/fullscreen trigger). Fix: set `should_refetch = true` on resize/fullscreen events and re-fetch then.
 

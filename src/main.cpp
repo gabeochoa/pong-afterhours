@@ -78,8 +78,10 @@ const vec2 button_size = vec2{100, 50};
 
 enum class InputAction {
   None,
-  PaddleUp,
-  PaddleDown,
+  P1Up,
+  P1Down,
+  P2Up,
+  P2Down,
   Launch,
 };
 
@@ -87,7 +89,7 @@ using afterhours::input;
 
 auto get_mapping() {
   std::map<InputAction, input::ValidInputs> mapping;
-  mapping[InputAction::PaddleUp] = {
+  mapping[InputAction::P1Up] = {
       raylib::KEY_UP,
       input::GamepadAxisWithDir{
           .axis = raylib::GAMEPAD_AXIS_LEFT_Y,
@@ -96,8 +98,26 @@ auto get_mapping() {
       raylib::GAMEPAD_BUTTON_LEFT_FACE_UP,
   };
 
-  mapping[InputAction::PaddleDown] = {
+  mapping[InputAction::P1Down] = {
       raylib::KEY_DOWN,
+      input::GamepadAxisWithDir{
+          .axis = raylib::GAMEPAD_AXIS_LEFT_Y,
+          .dir = 1,
+      },
+      raylib::GAMEPAD_BUTTON_LEFT_FACE_DOWN,
+  };
+
+  mapping[InputAction::P2Up] = {
+      raylib::KEY_W,
+      input::GamepadAxisWithDir{
+          .axis = raylib::GAMEPAD_AXIS_LEFT_Y,
+          .dir = -1,
+      },
+      raylib::GAMEPAD_BUTTON_LEFT_FACE_UP,
+  };
+
+  mapping[InputAction::P2Down] = {
+      raylib::KEY_S,
       input::GamepadAxisWithDir{
           .axis = raylib::GAMEPAD_AXIS_LEFT_Y,
           .dir = 1,
@@ -242,19 +262,18 @@ struct ImpulsePaddle : System<HasVelocity, PlayerID> {
     bool up = false;
     bool down = false;
 
+    InputAction up_action =
+        playerID.id == 0 ? InputAction::P1Up : InputAction::P2Up;
+    InputAction down_action =
+        playerID.id == 0 ? InputAction::P1Down : InputAction::P2Down;
+
     for (auto &actions_done : inpc.inputs()) {
       if (actions_done.id != playerID.id)
         continue;
-      switch (actions_done.action) {
-      case InputAction::PaddleUp:
+      if (actions_done.action == up_action)
         up = true;
-        break;
-      case InputAction::PaddleDown:
+      else if (actions_done.action == down_action)
         down = true;
-        break;
-      default:
-        break;
-      }
     }
 
     if (up) {
