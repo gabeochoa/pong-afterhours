@@ -444,7 +444,8 @@ int main(void) {
     input::enforce_singletons<InputAction>(systems);
   }
 
-  // external plugins
+  // External plugins first: systems run in registration order, and the
+  // gameplay systems below read this frame's input collector.
   {
     input::register_update_systems<InputAction>(systems);
     window_manager::register_update_systems(systems);
