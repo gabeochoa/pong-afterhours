@@ -401,24 +401,25 @@ Entity &make_ball() {
   return entity;
 }
 
-static void load_gamepad_mappings() {
+static bool load_gamepad_mappings() {
   std::string db_path =
       std::string(raylib::GetApplicationDirectory()) + "gamecontrollerdb.txt";
   std::ifstream ifs(db_path);
-  if (!ifs.is_open()) {
-    std::cout << "Failed to load game controller db" << std::endl;
-    return;
-  }
+  if (!ifs.is_open())
+    return false;
   std::stringstream buffer;
   buffer << ifs.rdbuf();
   input::set_gamepad_mappings(buffer.str().c_str());
+  return true;
 }
 
 int main(void) {
   raylib::InitWindow(GAME_W, GAME_H, "wm-afterhours");
   raylib::SetTargetFPS(200);
 
-  load_gamepad_mappings();
+  if (!load_gamepad_mappings())
+    std::cerr << "warning: gamecontrollerdb.txt not found, "
+                 "continuing with default gamepad mappings\n";
 
   // sophie
   auto &singletons = EntityHelper::createEntity();
