@@ -124,7 +124,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 ## Low
 
-- [ ] **`Collide` ignores paddle velocity and hit offset.** (`src/main.cpp:301`) — ball angle/speed are unchanged by a moving paddle or by where on the paddle the ball hits. Fix: add rebound angle from the hit offset plus paddle-velocity transfer.
+- [x] **`Collide` ignores paddle velocity and hit offset.** (`src/main.cpp:301`) — ball angle/speed are unchanged by a moving paddle or by where on the paddle the ball hits. Fix: add rebound angle from the hit offset plus paddle-velocity transfer.
 
 - [ ] **One speed scalar for ball and paddles.** (`src/main.cpp:177`) — `sz = 500` gives paddles 500 px/s but the ball only 250 px/s horizontally (`vel.x = -0.5`), so paddles outrun the ball horizontally. Fix: separate ball and paddle speed constants.
 

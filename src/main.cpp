@@ -331,6 +331,19 @@ struct Collide : System<Transform, HasVelocity> {
 
       hasVel.vel.x *= -1.f;
 
+      float offset =
+          ((transform.pos().y + transform.size.y / 2.f) -
+           (other.pos().y + other.size.y / 2.f)) /
+          (other.size.y / 2.f);
+      float paddle_vy = 0.f;
+      if (other_e.has<HasVelocity>())
+        paddle_vy = other_e.get<HasVelocity>().vel.y;
+      hasVel.vel.y =
+          std::clamp(offset + paddle_vy * 0.2f, -1.f, 1.f);
+      float dir = hasVel.vel.x > 0 ? 1.f : -1.f;
+      hasVel.vel.x =
+          dir * sqrtf(std::max(0.f, 1.f - hasVel.vel.y * hasVel.vel.y));
+
       vec2 p = transform.pos();
       p.x = hasVel.vel.x > 0 ? other.pos().x + other.size.x
                              : other.pos().x - transform.size.x;
