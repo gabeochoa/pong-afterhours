@@ -452,10 +452,10 @@ int main(void) {
     systems.register_render_system(
         [&]() { raylib::ClearBackground(raylib::DARKGRAY); });
     systems.register_render_system(std::make_unique<RenderScore>());
-    systems.register_render_system(std::make_unique<RenderFPS>());
+    systems.register_render_system(std::make_unique<RenderEntities>());
     // systems.register_render_system(
     // std::make_unique<input::RenderConnectedGamepads>());
-    systems.register_render_system(std::make_unique<RenderEntities>());
+    systems.register_render_system(std::make_unique<RenderFPS>());
   }
 
   raylib::RenderTexture2D target =

@@ -128,7 +128,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **One speed scalar for ball and paddles.** (`src/main.cpp:177`) — `sz = 500` gives paddles 500 px/s but the ball only 250 px/s horizontally (`vel.x = -0.5`), so paddles outrun the ball horizontally. Fix: separate ball and paddle speed constants.
 
-- [ ] **HUD draw order lets entities overdraw FPS text.** (`src/main.cpp:386`) — `RenderFPS` is registered before `RenderEntities`, so the ball/paddles can overdraw the FPS readout. Fix: register `RenderFPS` last.
+- [x] **HUD draw order lets entities overdraw FPS text.** (`src/main.cpp:386`) — `RenderFPS` is registered before `RenderEntities`, so the ball/paddles can overdraw the FPS readout. Fix: register `RenderFPS` last.
 
 - [ ] **Wrong window title.** (`src/main.cpp:347`) — `InitWindow` title is `'wm-afterhours'`, a window-manager leftover for a pong game. Fix: rename to `'pong-afterhours'`.
 
