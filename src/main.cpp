@@ -142,7 +142,7 @@ struct Transform : BaseComponent {
   vec2 size;
 
   vec2 pos() const { return position; }
-  void update(vec2 &v) { position = v; }
+  void update(const vec2 &v) { position = v; }
   Transform(vec2 pos, vec2 sz) : position(pos), size(sz) {}
   raylib::Rectangle rect() const {
     return raylib::Rectangle{position.x, position.y, size.x, size.y};

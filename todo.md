@@ -134,7 +134,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **ESC quits instantly.** (`src/main.cpp:392`) — no `SetExitKey`; raylib's default ESC sets `WindowShouldClose`, with no pause/confirm. Fix: `SetExitKey(KEY_NULL)` and handle ESC as pause.
 
-- [ ] **`Transform::update` takes a non-const reference.** (`src/main.cpp:100`) — `void update(vec2 &v)` never modifies `v`, blocking rvalue/temporary arguments. Fix: `const vec2 &v`.
+- [x] **`Transform::update` takes a non-const reference.** (`src/main.cpp:100`) — `void update(vec2 &v)` never modifies `v`, blocking rvalue/temporary arguments. Fix: `const vec2 &v`.
 
 - [ ] **Exact float equality for the launch check.** (`src/main.cpp:150`) — `vel.vel.x == 0.f && vel.vel.y == 0.f` uses exact comparison; fractional or NaN velocity never launches. Fix: use an epsilon comparison or an explicit launched flag.
 
