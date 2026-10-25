@@ -45,6 +45,7 @@ struct GameState : BaseComponent {
   int left = 0;
   int right = 0;
   bool game_over = false;
+  bool paused = true;
 };
 
 struct RenderScore : System<GameState> {
@@ -442,17 +443,29 @@ int main(void) {
       raylib::LoadRenderTexture(GAME_W, GAME_H);
 
   while (!raylib::WindowShouldClose()) {
-    if (raylib::IsKeyPressed(raylib::KEY_R) && state.game_over) {
+    if (raylib::IsKeyPressed(raylib::KEY_R)) {
       state.left = state.right = 0;
       state.game_over = false;
+      state.paused = false;
       ball.get<Transform>().update(
           vec2{(float)GAME_W / 2.f, (float)GAME_H / 2.f});
       ball.get<HasVelocity>().vel = {0, 0};
     }
+    if (raylib::IsKeyPressed(raylib::KEY_P) && !state.game_over)
+      state.paused = !state.paused;
     float dt = std::min(raylib::GetFrameTime(), 1.f / 30.f);
-    systems.tick_all(dt);
+    if (!state.paused && !state.game_over)
+      systems.tick_all(dt);
     raylib::BeginTextureMode(target);
     systems.render_all(dt);
+    if (state.paused) {
+      if (state.left == 0 && state.right == 0)
+        raylib::DrawText("PONG - P to play", GAME_W / 2 - 140,
+                         GAME_H / 2 - 20, 30, raylib::RAYWHITE);
+      else
+        raylib::DrawText("PAUSED - P to resume", GAME_W / 2 - 180,
+                         GAME_H / 2 - 20, 30, raylib::RAYWHITE);
+    }
     raylib::EndTextureMode();
     raylib::BeginDrawing();
     raylib::ClearBackground(raylib::BLACK);

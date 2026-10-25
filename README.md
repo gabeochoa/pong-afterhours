@@ -12,3 +12,13 @@ make build   # builds pong.exe without launching it
 make run     # builds and plays it
 make clean
 ```
+
+## Controls
+
+| | P1 | P2 |
+|---|---|---|
+| Paddle | Up/Down arrows or gamepad 1 | W/S or gamepad 2 |
+| Serve | Space (either player) | |
+| Pause | P | |
+| Restart | R | |
+
