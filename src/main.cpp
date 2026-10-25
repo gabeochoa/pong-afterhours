@@ -6,9 +6,8 @@ backward::SignalHandling sh;
 #include "std_include.h"
 
 #define AFTER_HOURS_USE_RAYLIB
-// Routes the input plugin's key/button polling through the e2e injector
-// (without it, the collector only sees the real keyboard and injected input
-// never reaches gameplay).
+// Routes input polling through the e2e injector; without it injected input
+// never reaches gameplay.
 #define AFTER_HOURS_ENABLE_E2E_TESTING
 #include "afterhours/ah.h"
 #include "afterhours/src/drawing_helpers.h"
@@ -258,10 +257,8 @@ struct ImpulsePaddle : System<HasVelocity, PlayerID> {
                                            : InputAction::P2Down);
 
     for (auto &actions_done : inpc.inputs()) {
-      // Keyboard actions arrive once per gamepad id (id 0 with no pads), so
-      // the paddle accepts any keyboard input for its own action; gamepad
-      // input must match its pad id. Per-player actions keep the shared
-      // keyboard input from cross-talking.
+      // Keyboard input arrives once per pad id, so accept any keyboard input
+      // for this paddle's action; gamepad input must match its pad id.
       if (actions_done.id != playerID.id &&
           actions_done.medium != input::DeviceMedium::Keyboard)
         continue;
