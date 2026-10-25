@@ -41,5 +41,8 @@ CXX := clang++
 
 .PHONY: all clean
 
+clean:
+	rm -rf $(OUTPUT_EXE) $(OUTPUT_EXE).dSYM output
+
 all:
 	$(CXX) $(FLAGS) $(INCLUDES) $(LIBS) src/main.cpp -o $(OUTPUT_EXE) && ./$(OUTPUT_EXE)

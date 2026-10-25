@@ -82,7 +82,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **Simultaneous up+down picks up instead of cancelling.** (`src/main.cpp:230`) — `if (up) ... else if (down)` makes up win when both are held (with merged keyboard+gamepad inputs). Fix: set velocity to 0 when both up and down are pressed.
 
-- [ ] **Analog magnitude discarded.** (`vendor/afterhours/src/plugins/input_system.h:315`) — `visit_axis` returns the actual magnitude, but the collector stores `amount_pressed = 1.f`, so analog deflection never scales paddle speed. Fix: store the actual `amount` and scale paddle speed by it.
+- [x] **Analog magnitude discarded.** (`vendor/afterhours/src/plugins/input_system.h:315`) — `visit_axis` returns the actual magnitude, but the collector stores `amount_pressed = 1.f`, so analog deflection never scales paddle speed. Fix: store the actual `amount` and scale paddle speed by it.
 
 - [ ] **`PossibleInputCollector::inputs()` unchecked.** (`vendor/afterhours/src/plugins/input_system.h:188`) — `inputs()`, `inputs_pressed()`, and `since_last_input()` call `data.value()` directly, throwing `bad_optional_access` if the collector is missing; callers must pre-check `has_value()`. Fix: check inside the accessors (return an empty vector / 0) or document the pre-check contract.
 
