@@ -118,7 +118,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **No pause/menu/restart state.** (`src/main.cpp:392`) — the main loop only checks `WindowShouldClose`; there is no pause, menu, game-over, or restart state machine. Fix: add a game-state machine and a pause key.
 
-- [ ] **`InitWindow` failure unchecked.** (`src/main.cpp:347`) — no check that window/context creation succeeded before systems and the loop run. Fix: check `IsWindowReady()` (or equivalent) and abort with an error.
+- [x] **`InitWindow` failure unchecked.** (`src/main.cpp:347`) — no check that window/context creation succeeded before systems and the loop run. Fix: check `IsWindowReady()` (or equivalent) and abort with an error.
 
 - [ ] **`MoveAndBounce::once` missing `override`.** (`src/main.cpp:161`) — `void once(float)` has no `override` (sibling systems use it); clang `-Winconsistent-missing-override` warns. Fix: add `override`.
 

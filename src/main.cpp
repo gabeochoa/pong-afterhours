@@ -388,6 +388,10 @@ int main(void) {
                           raylib::FLAG_VSYNC_HINT |
                           raylib::FLAG_WINDOW_HIGHDPI);
   raylib::InitWindow(GAME_W, GAME_H, "wm-afterhours");
+  if (!raylib::IsWindowReady()) {
+    std::cerr << "error: failed to create window\n";
+    return 1;
+  }
 
   if (!load_gamepad_mappings())
     std::cerr << "warning: gamecontrollerdb.txt not found, "
