@@ -96,7 +96,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [x] **No letterboxing/scaling for non-1280x720 windows.** (`src/main.cpp:392`) — the game draws raw-pixel coordinates directly to the backbuffer, with no `RenderTexture`/viewport; on other sizes the playfield stretches/misplaces. Fix: render to a 1280x720 texture and letterboxed-blit it to the window.
 
-- [ ] **`Collide` is O(n^2) per frame.** (`src/main.cpp:294`) — a full `EQ().gen()` scan runs inside `for_each_with` for every `Transform + HasVelocity` entity. Fix: collect colliders once in `once()` (or once per tick) and reuse them.
+- [x] **`Collide` is O(n^2) per frame.** (`src/main.cpp:294`) — a full `EQ().gen()` scan runs inside `for_each_with` for every `Transform + HasVelocity` entity. Fix: collect colliders once in `once()` (or once per tick) and reuse them.
 
 - [ ] **Input collector re-queried per paddle per frame.** (`src/main.cpp:206`) — `get_input_collector()` runs a full `EntityQuery` scan inside each `for_each_with` call. Fix: fetch the collector once per tick and pass/cache it.
 

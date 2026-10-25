@@ -333,12 +333,16 @@ struct EQ : public EntityQuery<EQ> {
 };
 
 struct Collide : System<Transform, HasVelocity> {
+  RefEntities colliders;
+
+  void once(float) override {
+    colliders = EntityQuery().whereHasComponent<Transform>().gen();
+  }
+
   virtual void for_each_with(Entity &entity, Transform &transform,
                              HasVelocity &hasVel, float) override {
     if (entity.has<PlayerID>())
       return;
-
-    // only worry about those that can flip
 
     raylib::Rectangle swept = transform.rect();
     swept.x = std::min(transform.pos().x, transform.prev.x);
@@ -350,27 +354,34 @@ struct Collide : System<Transform, HasVelocity> {
                             transform.prev.y + transform.size.y) -
                    swept.y;
 
-    auto colliders = EQ().whereNotID(entity.id)
-                         .whereHasComponent<Transform>()
-                         .whereOverlaps(swept)
-                         .gen();
-    if (colliders.size() == 0)
-      return;
+    for (auto &ref : colliders) {
+      Entity &other_e = ref.get();
+      if (other_e.id == entity.id)
+        continue;
+      const Transform &other = other_e.get<Transform>();
+      bool overlap =
+          swept.x < other.pos().x + other.size.x &&
+          other.pos().x < swept.x + swept.width &&
+          swept.y < other.pos().y + other.size.y &&
+          other.pos().y < swept.y + swept.height;
+      if (!overlap)
+        continue;
 
-    const Transform &other = colliders[0].get().get<Transform>();
-    float dx = (transform.pos().x + transform.size.x / 2.f) -
-               (other.pos().x + other.size.x / 2.f);
-    bool approaching =
-        (hasVel.vel.x > 0 && dx < 0) || (hasVel.vel.x < 0 && dx > 0);
-    if (!approaching)
-      return;
+      float dx = (transform.pos().x + transform.size.x / 2.f) -
+                 (other.pos().x + other.size.x / 2.f);
+      bool approaching =
+          (hasVel.vel.x > 0 && dx < 0) || (hasVel.vel.x < 0 && dx > 0);
+      if (!approaching)
+        continue;
 
-    hasVel.vel.x *= -1.f;
+      hasVel.vel.x *= -1.f;
 
-    vec2 p = transform.pos();
-    p.x = hasVel.vel.x > 0 ? other.pos().x + other.size.x
-                           : other.pos().x - transform.size.x;
-    transform.update(p);
+      vec2 p = transform.pos();
+      p.x = hasVel.vel.x > 0 ? other.pos().x + other.size.x
+                             : other.pos().x - transform.size.x;
+      transform.update(p);
+      break;
+    }
   }
 };
 
