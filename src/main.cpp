@@ -42,6 +42,8 @@ template <typename T> int sgn(T val) { return (T(0) < val) - (val < T(0)); }
 } // namespace myutil
 
 constexpr int WIN_SCORE = 5;
+constexpr int GAME_W = 1280;
+constexpr int GAME_H = 720;
 
 struct GameState : BaseComponent {
   int left = 0;
@@ -53,13 +55,13 @@ struct RenderScore : System<GameState> {
   virtual void for_each_with(const Entity &, const GameState &state,
                              float) const override {
     raylib::DrawText(
-        raylib::TextFormat("%d : %d", state.left, state.right), 640 - 30, 10,
-        30, raylib::RAYWHITE);
+        raylib::TextFormat("%d : %d", state.left, state.right),
+        GAME_W / 2 - 30, 10, 30, raylib::RAYWHITE);
     if (state.game_over) {
       raylib::DrawText(
           raylib::TextFormat("%s WINS - R to play again",
                              state.left > state.right ? "P1" : "P2"),
-          640 - 190, 320, 30, raylib::RAYWHITE);
+          GAME_W / 2 - 190, GAME_H / 2 - 40, 30, raylib::RAYWHITE);
     }
   }
 };
@@ -193,28 +195,13 @@ struct ImpulseBall : System<HasVelocity> {
 };
 
 struct MoveAndBounce : System<Transform, HasVelocity> {
-  float map_width;
-  float map_height;
-
-  void once(float) {
-    auto &rez_manager =
-        EntityQuery()
-            .whereHasComponent<window_manager::ProvidesCurrentResolution>()
-            .gen_first_enforce();
-
-    window_manager::ProvidesCurrentResolution &pCurrentResolution =
-        rez_manager.get<window_manager::ProvidesCurrentResolution>();
-
-    map_width = (float)pCurrentResolution.width();
-    map_height = (float)pCurrentResolution.height();
-  }
   virtual void for_each_with(Entity &entity, Transform &transform,
                              HasVelocity &vel, float dt) override {
     float sz = 500;
     vec2 p = transform.pos();
     p += vel.vel * sz * dt;
 
-    if (p.y < 0 || p.y + transform.size.y > map_height) {
+    if (p.y < 0 || p.y + transform.size.y > GAME_H) {
       // players dont bounce
       if (entity.has<PlayerID>())
         return;
@@ -224,7 +211,7 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
       p += vel.vel * sz * dt;
     }
 
-    if (p.x < -10 || p.x > map_width + 10) {
+    if (p.x < -10 || p.x > GAME_W + 10) {
       auto scored = EntityQuery().whereHasComponent<GameState>().gen_first();
       if (scored) {
         GameState &state = scored.asE().get<GameState>();
@@ -235,7 +222,7 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
         state.game_over =
             state.left >= WIN_SCORE || state.right >= WIN_SCORE;
       }
-      p = vec2{map_width / 2.f, map_height / 2.f};
+      p = vec2{GAME_W / 2.f, GAME_H / 2.f};
       vel.vel = {0, 0};
     }
 
@@ -374,7 +361,8 @@ struct RenderEntities : System<Transform> {
 void make_paddle(input::GamepadID id) {
   auto &entity = EntityHelper::createEntity();
 
-  vec2 position = {.x = id == 0 ? 150.f : 1100.f, .y = 720.f / 2.f};
+  vec2 position = {.x = id == 0 ? 150.f : (float)GAME_W - 180.f,
+                     .y = (float)GAME_H / 2.f};
 
   entity.addComponent<PlayerID>(id);
   entity.addComponent<Transform>(position, vec2{30.f, 150.f});
@@ -384,7 +372,7 @@ void make_paddle(input::GamepadID id) {
 Entity &make_ball() {
   auto &entity = EntityHelper::createEntity();
 
-  vec2 position = {.x = 1280.f / 2.f, .y = 720.f / 2.f};
+  vec2 position = {.x = (float)GAME_W / 2.f, .y = (float)GAME_H / 2.f};
 
   entity.addComponent<Transform>(position, vec2{30.f, 30.f});
   entity.addComponent<HasVelocity>();
@@ -405,10 +393,7 @@ static void load_gamepad_mappings() {
 }
 
 int main(void) {
-  const int screenWidth = 1280;
-  const int screenHeight = 720;
-
-  raylib::InitWindow(screenWidth, screenHeight, "wm-afterhours");
+  raylib::InitWindow(GAME_W, GAME_H, "wm-afterhours");
   raylib::SetTargetFPS(200);
 
   load_gamepad_mappings();
@@ -460,7 +445,8 @@ int main(void) {
     if (raylib::IsKeyPressed(raylib::KEY_R) && state.game_over) {
       state.left = state.right = 0;
       state.game_over = false;
-      ball.get<Transform>().update(vec2{1280.f / 2.f, 720.f / 2.f});
+      ball.get<Transform>().update(
+          vec2{(float)GAME_W / 2.f, (float)GAME_H / 2.f});
       ball.get<HasVelocity>().vel = {0, 0};
     }
     float dt = raylib::GetFrameTime();
