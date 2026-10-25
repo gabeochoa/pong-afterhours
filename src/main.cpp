@@ -195,7 +195,8 @@ struct ImpulseBall : System<HasVelocity> {
         space = true;
     }
 
-    if (space && vel.vel.x == 0.f && vel.vel.y == 0.f) {
+    if (space && std::abs(vel.vel.x) < 1e-6f &&
+        std::abs(vel.vel.y) < 1e-6f) {
       float angle = (float)raylib::GetRandomValue(-35, 35) * DEG2RAD;
       float dir = raylib::GetRandomValue(0, 1) == 0 ? -1.f : 1.f;
       vel.vel.x = dir * cosf(angle);
