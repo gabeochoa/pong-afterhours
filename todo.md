@@ -16,7 +16,7 @@ upstream there if the fix belongs to the library, not just in this repo.
 
 - [ ] **No scoring, winner, or game end on out-of-bounds.** (`src/main.cpp:191`) — out-of-bounds just recentres the ball and zeroes velocity, with `// TODO add to score`; no score state exists anywhere. Fix: award a point by exit side before reset; store/display scores; add a win condition.
 
-- [ ] **`Collide` flips both velocity axes on any overlap.** (`src/main.cpp:301`) — `hasVel.vel = hasVel.vel * -1.f` reverses x and y even for a head-on paddle-face hit, wrongly changing the vertical angle. Fix: flip only the penetration/collision-normal axis (x for a paddle face).
+- [x] **`Collide` flips both velocity axes on any overlap.** (`src/main.cpp:301`) — `hasVel.vel = hasVel.vel * -1.f` reverses x and y even for a head-on paddle-face hit, wrongly changing the vertical angle. Fix: flip only the penetration/collision-normal axis (x for a paddle face).
 
 - [ ] **`Collide` lacks an approaching check.** (`src/main.cpp:298`) — flips on any overlap with no check on velocity direction, so it flips the ball even when moving away while still overlapping, sending it back into the paddle. Fix: flip only when the entity is moving toward the collider (velocity along the collision normal).
 

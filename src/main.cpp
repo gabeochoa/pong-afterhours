@@ -41,6 +41,29 @@ template <class... Ts> struct overloaded : Ts... {
 template <typename T> int sgn(T val) { return (T(0) < val) - (val < T(0)); }
 } // namespace myutil
 
+constexpr int WIN_SCORE = 5;
+
+struct GameState : BaseComponent {
+  int left = 0;
+  int right = 0;
+  bool game_over = false;
+};
+
+struct RenderScore : System<GameState> {
+  virtual void for_each_with(const Entity &, const GameState &state,
+                             float) const override {
+    raylib::DrawText(
+        raylib::TextFormat("%d : %d", state.left, state.right), 640 - 30, 10,
+        30, raylib::RAYWHITE);
+    if (state.game_over) {
+      raylib::DrawText(
+          raylib::TextFormat("%s WINS - R to play again",
+                             state.left > state.right ? "P1" : "P2"),
+          640 - 190, 320, 30, raylib::RAYWHITE);
+    }
+  }
+};
+
 struct RenderFPS : System<window_manager::ProvidesCurrentResolution> {
   virtual ~RenderFPS() {}
   virtual void for_each_with(
@@ -169,8 +192,6 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
 
     map_width = (float)pCurrentResolution.width();
     map_height = (float)pCurrentResolution.height();
-
-    // TODO get score singleton
   }
   virtual void for_each_with(Entity &entity, Transform &transform,
                              HasVelocity &vel, float dt) override {
@@ -189,9 +210,18 @@ struct MoveAndBounce : System<Transform, HasVelocity> {
     }
 
     if (p.x < -10 || p.x > map_width + 10) {
+      auto scored = EntityQuery().whereHasComponent<GameState>().gen_first();
+      if (scored) {
+        GameState &state = scored.asE().get<GameState>();
+        if (p.x < -10)
+          state.right++;
+        else
+          state.left++;
+        state.game_over =
+            state.left >= WIN_SCORE || state.right >= WIN_SCORE;
+      }
       p = vec2{map_width / 2.f, map_height / 2.f};
       vel.vel = {0, 0};
-      // TODO add to score
     }
 
     transform.update(p);
@@ -320,13 +350,14 @@ void make_paddle(input::GamepadID id) {
   entity.addComponent<HasVelocity>();
 }
 
-void make_ball() {
+Entity &make_ball() {
   auto &entity = EntityHelper::createEntity();
 
   vec2 position = {.x = 1280.f / 2.f, .y = 720.f / 2.f};
 
   entity.addComponent<Transform>(position, vec2{30.f, 30.f});
   entity.addComponent<HasVelocity>();
+  return entity;
 }
 
 static void load_gamepad_mappings() {
@@ -350,15 +381,17 @@ int main(void) {
   load_gamepad_mappings();
 
   // sophie
+  auto &singletons = EntityHelper::createEntity();
   {
-    auto &entity = EntityHelper::createEntity();
-    input::add_singleton_components<InputAction>(entity, get_mapping());
-    window_manager::add_singleton_components(entity, 200);
+    input::add_singleton_components<InputAction>(singletons, get_mapping());
+    window_manager::add_singleton_components(singletons, 200);
+    singletons.addComponent<GameState>();
   }
+  GameState &state = singletons.get<GameState>();
 
   make_paddle(0);
   make_paddle(1);
-  make_ball();
+  Entity &ball = make_ball();
 
   SystemManager systems;
 
@@ -383,6 +416,7 @@ int main(void) {
   {
     systems.register_render_system(
         [&]() { raylib::ClearBackground(raylib::DARKGRAY); });
+    systems.register_render_system(std::make_unique<RenderScore>());
     systems.register_render_system(std::make_unique<RenderFPS>());
     // systems.register_render_system(
     // std::make_unique<input::RenderConnectedGamepads>());
@@ -390,6 +424,12 @@ int main(void) {
   }
 
   while (!raylib::WindowShouldClose()) {
+    if (raylib::IsKeyPressed(raylib::KEY_R) && state.game_over) {
+      state.left = state.right = 0;
+      state.game_over = false;
+      ball.get<Transform>().update(vec2{1280.f / 2.f, 720.f / 2.f});
+      ball.get<HasVelocity>().vel = {0, 0};
+    }
     raylib::BeginDrawing();
     { systems.run(raylib::GetFrameTime()); }
     raylib::EndDrawing();
