@@ -175,6 +175,8 @@ struct PlayerID : BaseComponent {
 
 struct ImpulseBall : System<HasVelocity> {
 
+  // Any player may serve: there is no serve ownership in pong, so Launch
+  // deliberately ignores the action's player id (unlike ImpulsePaddle).
   virtual void for_each_with(Entity &entity, HasVelocity &vel, float) override {
     if (entity.has<PlayerID>())
       return;
