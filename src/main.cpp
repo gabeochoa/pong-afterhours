@@ -20,6 +20,10 @@ using namespace afterhours;
 
 constexpr int WIN_SCORE = 5;
 constexpr float BALL_SPEED = 500.f;
+// Paddle hits cap the rebound angle at 60° from horizontal: |vy| <= sin(60°)
+// leaves |vx| = sqrt(1 - vy²) >= 0.5, so the ball can never go purely
+// vertical (where vx = 0) and get stuck bouncing between the walls.
+constexpr float kMaxBallVelY = 0.866f;
 constexpr float PADDLE_SPEED = 450.f;
 constexpr int GAME_W = 1280;
 constexpr int GAME_H = 720;
@@ -254,7 +258,8 @@ struct Collide : System<Transform, HasVelocity, Ball> {
 
       const float offset = d.y / (other.size.y / 2.f);
       const float paddle_vy = other_e.get<HasVelocity>().vel.y;
-      hasVel.vel.y = std::clamp(offset + paddle_vy * 0.2f, -1.f, 1.f);
+      hasVel.vel.y = std::clamp(offset + paddle_vy * 0.2f, -kMaxBallVelY,
+                                kMaxBallVelY);
       float dir = hasVel.vel.x > 0 ? 1.f : -1.f;
       hasVel.vel.x =
           dir * sqrtf(std::max(0.f, 1.f - hasVel.vel.y * hasVel.vel.y));

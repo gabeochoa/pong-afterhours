@@ -1,0 +1,8 @@
+# Edge hit must not send the ball straight up/down: after bouncing off
+# the bottom edge of P1's paddle, the ball keeps meaningful horizontal speed.
+key R
+wait_frames 2
+center_paddles
+teleport_ball 260 500 -1 0
+wait_frames 60
+assert_ball_vel_x gt 0.4
